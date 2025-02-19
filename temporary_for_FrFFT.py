@@ -23,7 +23,7 @@ N_FFT = 2**n_FFT
 n_FrFFT = 9
 N_FrFFT = 2**n_FrFFT
 
-N = 512
+N = 1000 (在正確的代碼下, N的數值不影響結果, N不等於2**n)
 
 #step-size
 eta = 0.25
