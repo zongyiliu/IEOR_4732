@@ -1,3 +1,5 @@
+# 這個代碼如果用intergral 的數的話, 能跑出正確的 FFT 結果 (符合課本給的數值, 這個我都測了)
+
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -8,7 +10,7 @@ import time
 
 # Fixed Parameters
 S0 = 1900
-K = 2000
+K = 2100
 k = math.log(K)
 r = 0.02
 q = 0.0187
@@ -18,10 +20,10 @@ q = 0.0187
 n_FFT = 9
 N_FFT = 2**n_FFT
 
-n_FrFFT = 7
+n_FrFFT = 9
 N_FrFFT = 2**n_FrFFT
 
-N = 1000
+N = 512
 
 #step-size
 eta = 0.25
@@ -48,7 +50,7 @@ if (model == 'GBM'):
     params.append(sig);
 
 elif model == 'BlackScholes':  
-    sigma = 0.30  # Volatility  
+    sigma = 0.36  # Volatility  
     params.append(sigma)  
     
 elif (model == 'VG'):
@@ -253,7 +255,7 @@ print('===================')
 print('Model is %s' % model)
 print('-------------------')
     
-T = 1
+T = 0.25
 
 # FFT
 print(' ')
