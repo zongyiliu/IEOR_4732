@@ -1,0 +1,736 @@
+\documentclass[letterpaper]{article} 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{ctex} 
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage[dvipsnames]{xcolor}
+\colorlet{LightRubineRed}{RubineRed!70}
+\colorlet{Mycolor1}{green!10!orange}
+\definecolor{Mycolor2}{HTML}{00F9DE}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{lipsum}
+\usepackage{algpseudocode}
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage[export]{adjustbox}
+\graphicspath{ {./images/} }
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{ctex}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{tcolorbox}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{pifont} 
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref} 
+\newcommand{\cmark}{\textcolor{green!60!black}{\ding{51}}} % ✓
+\newcommand{\xmark}{\textcolor{red}{\ding{55}}}    
+\usepackage{xcolor} % For custom colors
+\lstset{
+	language=Python,                % Choose the language (e.g., Python, C, R)
+	basicstyle=\ttfamily\small, % Font size and type
+	keywordstyle=\color{blue},  % Keywords color
+	commentstyle=\color{gray},  % Comments color
+	stringstyle=\color{red},    % String color
+	numbers=left,               % Line numbers
+	numberstyle=\tiny\color{gray}, % Line number style
+	stepnumber=1,               % Numbering step
+	breaklines=true,            % Auto line break
+	backgroundcolor=\color{black!5}, % Light gray background
+	frame=single,               % Frame around the code
+}
+\usepackage{float}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+	\usepackage[]{amssymb} %gives us the character \varnothing
+	
+	\title{Lecture 9, IEOR 4732\\
+		\small{Model Calibration and Optimization\\模型的調節和最優化
+	}}
+	
+	\author{Zongyi Liu}
+	\date{Thu, Mar 27, 2025}
+	\begin{document}
+		\maketitle
+		\tableofcontents
+		
+		\section{回顧 (Quick Recap)}
+		\begin{itemize}
+			\item (a)可使用轉換技術 (如傅立葉轉換), 適用於歐式期權與弱路徑依賴的情況. 
+			\item (b)若為路徑依賴但無特徵函數形式, 且具馬爾可夫性, 則可使用偏微分方程 (PDE)或偏微分-整合方程 (PIDE)的數值解法. 
+			\item (c)若為高維馬爾可夫過程或非馬爾可夫過程, 則適合採用蒙特卡羅方法. 
+		\end{itemize}
+		
+		{\scriptsize
+			\begin{center}
+				\begin{tabular}{|c|c|ccc|ccc|ccc|}
+					\hline
+					\multirow{2}{*}{} & \multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{Transform Techniques}} & \multicolumn{3}{c|}{\textbf{PDEs / PIDEs}} & \multicolumn{3}{c|}{\textbf{MC Simulation}} \\
+					& & Vanilla & Weak & Exotic & Vanilla & Weak & Exotic & Vanilla & Weak & Exotic \\
+					\hline
+					\multirow{10}{*}{\rotatebox{90}{Eq/FX/Cmdty/Credit}} 
+					& GBM        & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					& LV         & \xmark & \xmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					& CEV        & \xmark & \xmark & \xmark & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark \\
+					& Heston SV  & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					& SLV        & \xmark & \xmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					& VG / NIG   & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					& CGMY       & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \xmark & \xmark & \xmark \\
+					& VGSA       & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					& CGMYSA     & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \xmark & \xmark & \xmark \\
+					& NIGSA      & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					\hline
+					\multirow{4}{*}{\rotatebox{90}{1-Factor}} 
+					& OU / Vasicek & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					& CIR          & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					& Hull-White   & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					& Ho-Lee       & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					\hline
+					\multirow{5}{*}{\rotatebox{90}{n-Factor}} 
+					& Vasicek      & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					& CIR          & \cmark & \cmark & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+					& ATSM         & \cmark & \cmark & \xmark & \xmark & \xmark & \xmark & \cmark & \cmark & \cmark \\
+					& HJM          & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark & \cmark & \cmark \\
+					& LMM          & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark & \cmark & \cmark \\
+					\hline
+				\end{tabular}
+			\end{center}
+		}
+		\captionof{table}{Pricing Schemes for Various Different Models/Processes}
+		
+		\subsection{期權定價模組 (Option Pricing Modules)}
+		\begin{itemize}
+			\item 擁有一個通用的期權定價模型. 
+			\item 選定一個模型與參數組 $\Theta$, 在固定到期日下, 可對一系列履約價產生 (看漲)期權價格. 
+		\end{itemize}
+		
+		\textbf{寫法}
+		
+		模組價格
+		
+		$$
+		\hat{V}\left (S_{0, }, K, r, q, T ; \Theta\right)
+		$$
+		
+		選定一個模型與參數組 $\Theta$ (即模型參數集), 在固定到期日下, 可對一系列履約價產生 (看漲) 期權價格. 
+		
+		
+		\subsection{市場期權價格 (Market Option Prices)}
+		\begin{itemize}
+			\item 與其他商品一樣, 期權也有買入價 (bid)與賣出價 (ask). 
+			\item 如果你是買方, 則需按賣出價購買；如果你是賣方, 則只能按買入價出售. 
+			\item 當買方多於賣方時, 價格通常會上漲, 反之亦然. 
+		\end{itemize}
+		
+		\subsection{買賣價差 (Bid-Ask Spread)}
+		\begin{itemize}
+			\item 對於交易量大或具流動性的期權合約, 買賣價差通常較小. 
+			\item 對於交易量小或流動性差的期權合約, 買賣價差通常較大. 
+		\end{itemize}
+		
+		\section{期權曲面 (Option Surface)}
+		\subsection{圖片 (Pictures)}
+		\begin{center}
+			\includegraphics[max width=\textwidth]{2025_03_28_a31b509f4a5e9aec7161g-08}
+		\end{center}
+		
+		\begin{center}
+			\includegraphics[max width=\textwidth]{2025_03_28_a31b509f4a5e9aec7161g-09}
+		\end{center}
+		
+		\begin{center}
+			\includegraphics[max width=\textwidth]{2025_03_28_a31b509f4a5e9aec7161g-10}
+		\end{center}
+		
+		\begin{center}
+			\includegraphics[max width=\textwidth]{2025_03_28_a31b509f4a5e9aec7161g-11}
+		\end{center}
+		
+		\begin{center}
+			\includegraphics[max width=0.6\textwidth]{apple}{蘋果買入權曲面 (Apple Call Surface)}
+		\end{center}
+		
+		\subsection{問題 (Q\&A)}
+		\noindent Q: 是否存在能解釋整個波動率曲面的模型？\\
+		A: 一般而言, 找到能完美擬合整個曲面的模型是不可能的. \\
+		$\triangleright$ 但可以找到一個模型達到不錯的擬合效果. \\
+		$\triangleright$ 這就是所謂的「校準」 (calibration)本質. \\
+		
+		\noindent Q: 如果想估算超過目前最長可得到期日的價格怎麼辦？\\
+		A: 可以透過外推法 (extrapolation)——可基於模型, 也可基於曲線. \\
+		
+		\noindent Q: 若短期期限價格變動, 會如何影響長期期限？反之亦然？\\
+		A: 這並不容易回答. 
+		
+		
+		\section{校準 (Calibration)}
+		\subsection{模型校準 (Model Calibration)}
+		模型校準: 調整模型參數, 使模型價格與市場價格一致的過程, 稱為校準 (calibration). 
+		
+		
+		\subsection{校準的頻率 (Frequency of Calibration)}
+		\begin{enumerate}
+			\item 更頻繁的校準. 
+			\item 額外插值處理. 
+			\item 用於定價標記與風險管理目的. 
+			\item 某些情況下可用於錯誤定價與交易機會. 
+		\end{enumerate}
+		
+		\subsection{單一價格波動率 (One Price Volatility)}
+		(a) Black-Merton-Scholes
+		
+		$$
+		\Theta=\{\sigma\}
+		$$
+		
+		\begin{itemize}
+			\item 尋找一個使模型價格與市場價格在相同履約價與到期日下相符的波動率. 
+			\item 一個價格對應一個參數 (波動率). 
+			\item 市場慣例: 使用 B-M-S 模型. 
+			\item 已有充分研究證明, 平值期權的波動率通常低於價外期權. 
+			\item 可能會低估或高估. 
+		\end{itemize}
+		
+		以圖像展示: 
+		
+		\includegraphics[max width=0.7\textwidth, center]{2025_03_28_a31b509f4a5e9aec7161g-18}
+		\captionof{figure}{Implied Volatility (Apple), for 
+			Strike $=185.0$, Maturity (days)=151}
+		
+		\subsection{寫法 (Notations)}
+		市場價格: 
+		
+		$$
+		V\left (S_{0}, K, r, {q}, {T}\right)
+		$$
+		
+		模型價格: 
+		
+		$$
+		\hat{V}\left (S_{0}, K, r, q, T ; \Theta\right)
+		$$
+		
+		此處 $\Theta$ 是模型的參數集.
+		
+		\subsubsection{簡寫 (In Short)}
+		市場價格: 
+		
+		$$
+		V_i
+		$$
+		
+		模型價格: 
+		
+		$$
+		\hat{V}_{i}^{\Theta}
+		$$
+		
+		\subsection{校準公式 (Calibration Formulation)}
+		$$
+		\min _{\Theta \in \mathbb{O}} \sum_{i=1}^{n} H\left (\hat{V}_{i}^{\Theta}-V_{i}\right)
+		$$
+		
+		其中 $H$ 是應用於模型價格與市場價格差異 $\hat{V}_{i}^{\Theta} - V_{i}$ 的目標函數, 而 $\mathbb{O}$ 是所有可能參數組成的空間. 
+		
+		
+		\subsection{目標/成本函數 (Objective/Cost Function)}
+		對於 $H$ 的一些公式: 
+		% 1. Absolute Error Loss
+		\begin{itemize}
+			\item $H (V_i^\Theta - V_i) = w_i \left| \hat{V}_i^\Theta - V_i \right|^p$
+			\item $H (V_i^\Theta - V_i) = w_i \left| \frac{\hat{V}_i^\Theta - V_i}{V_i} \right|^p$
+			\item $H (V_i^\Theta - V_i) = w_i \left| \ln \hat{V}_i^\Theta - \ln V_i \right|^p$
+		\end{itemize}
+		
+		
+		
+		
+		\subsection{正則化校準公式 (Regularized Calibration Formulation)}
+		
+		在定價誤差中加入一個稱為正則化項的凸罰項 $R$, 並求解輔助問題 (auxiliary problem): 
+		
+		\[
+		\min_{\Theta \in \mathbb{O}} \sum_{i=1}^n H (\hat{V}_i^\Theta - V_i) + R \left\| \Theta - \Theta^* \right\|
+		\]
+		
+		\subsection{加權最小二乘公式 (Weighted Least-Squares)}
+		校準問題最常見的表述方式是\underline{加權最小二乘} (weighted least-squares)形式: 
+		
+		$$
+		\min _{\Theta \in \mathbb{O}} \sum_{i=1}^{n} w_{i}\left (\hat{V}_{i}^{\Theta}-V_{i}\right)^{2}
+		$$
+		
+		\subsection{$w_{i}$ 的選擇 (Choices for $w_{i}$)}
+		\begin{itemize}
+			\item 與流動性成正比. 
+			\item 與買賣價差成反比. 
+		\end{itemize}
+		
+		$$
+		w_{i} \propto \frac{1}{\mid \text {bid-ask} \mid}
+		$$
+		
+		\section{過程 (Procedure)}
+		\subsection{參數設定 (Parameter Settings)}
+		設 $n_{l}$ 為校準工具的數量, $n_{P}$ 為模型參數的數量: 
+		
+		\begin{enumerate}
+			\item 當 $n_{I} = n_{P}$, 例如 B-M-S 隱含波動率, 為參數數目與資料數目相等的情況. 
+			\item 當 $n_{I} > n_{P}$, 為參數不足 (under-parameterized)情況. 
+			\item 當 $n_{I} < n_{P}$, 為參數過多 (over-parameterized)情況. 
+		\end{enumerate}
+		
+		通常未能參數化 (under-parameterized)
+		
+		\subsection{校準方式 (Recipe for Calibration)}
+		\begin{itemize}
+			\item 指定數據集. 
+			\item 選擇模型. 
+			\item 選擇目標函數/成本函數. 
+			\item 選擇初始參數組. 
+			\item 選擇最佳化程序. 
+			
+		\end{itemize}
+		
+		\section{數據集的特定性 (Specification of a Dataset)}
+		各種特定性: 
+		
+		\begin{enumerate}
+			\item 使用所有可用的價格. 
+			\item 僅使用價外的買權與賣權期權. 
+			\item 使用者自行決定. 
+		\end{enumerate}
+		
+		\section{模型的選擇 (Choice of a Model)}
+		
+		赫斯頓隨機波動性來適配: 
+		
+		
+		\begin{itemize}
+			\item 整個波動率曲面, 
+			\item 或曲面的一部分. 
+		\end{itemize}
+		
+		參數集: $\Theta=\left\{\kappa, \theta, \sigma, \rho, v_{0}\right\}$
+		
+		\[
+		\mathrm{RMSE} = \sqrt{ \frac{1}{n} \sum_{i=1}^{n} \left ( \hat{V}_i^{\Theta} - V_i \right)^2 }
+		\]
+		
+		\subsection{初始參數集的選擇 (Choice of Initial Parameter Set)}
+		\begin{itemize}
+			\item 起始點的選擇有多重要？
+			\item 如何找到一個好的起始點？
+			\item 誤差曲面 (error surface)是什麼樣？
+		\end{itemize}
+		
+		$$
+		\Theta=\alpha \Theta_{1}+ (1-\alpha) \Theta_{2}
+		$$
+		
+		其中 $\Theta_{1}$ 和 $\Theta_{2}$ 是任意兩組參數, 且 $\alpha \in (0, 1)$.
+		
+		$$
+		\begin{aligned}
+			& \Theta_{1}= (1.0, 0.02, 0.05, -0.4, 0.08) \\
+			& \Theta_{2}= (3.0, 0.06, 0.10, -0.6, 0.04)_{s}
+		\end{aligned}
+		$$
+		
+		\begin{center}
+			\includegraphics[max width=0.5\textwidth]{2025_03_28_a31b509f4a5e9aec7161g-33}
+		\end{center}
+		
+		$$
+		\begin{aligned}
+			& \Theta_{1}= (6.0, 0.05, 0.04, +0.7, 0.10) \\
+			& \Theta_{2}= (1.0, 0.02, 0.10, -0.8, 0.04)
+		\end{aligned}
+		$$
+		
+		\begin{center}
+			\includegraphics[max width=0.5\textwidth]{2025_03_28_a31b509f4a5e9aec7161g-34}
+		\end{center}
+		
+		$$
+		\begin{aligned}
+			& \Theta_{1}= (1.0, 0.0625, 0.0125, -0.7, 0.05) \\
+			& \Theta_{2}= (8.0, 0.0200, 0.0500, +0.6, 0.122)
+		\end{aligned}
+		$$
+		
+		\begin{center}
+			\includegraphics[max width=0.5\textwidth]{2025_03_28_a31b509f4a5e9aec7161g-35}
+		\end{center}
+		
+		$$
+		\begin{aligned}
+			& \Theta_{1}= (4.0, 0.05, 0.03, -0.6, 0.10) \\
+			& \Theta_{2}= (1.0, 0.10, 0.05, +0.7, 0.05)_{s}
+		\end{aligned}
+		$$
+		
+		\begin{center}
+			\includegraphics[max width=0.5\textwidth]{2025_03_28_a31b509f4a5e9aec7161g-36}
+		\end{center}
+		
+		\section{最優化路徑 (Optimization Routines)}
+		主要有 3 種: 
+		
+		\begin{itemize}
+			\item 暴力 (網格) 搜尋法. 
+			\item 無梯度演算法, 例如 Nelder-Mead 單純形法. 
+			\item 有梯度演算法, 例如 Broyden-Fletcher-Goldfarb-Shanno (BFGS)法. 
+		\end{itemize}
+		
+		\subsection{暴力 (網格) 搜尋法 (Brute-Force (Grid) Search)}
+		它在 $n$ 維空間中對所有可能的候選參數進行全面搜尋.
+		
+		\begin{itemize}
+			\item 優勢: 
+			
+			\begin{enumerate}
+				\item guarantees the global minimum independent of the shape of the objective function.
+			\end{enumerate}
+			
+			\item 劣勢: 
+			
+			\begin{enumerate}
+				\item Very expensive, not feasible for higher-dimensional problems.
+				\item Curse of dimensionality.
+			\end{enumerate}
+		\end{itemize}
+		
+		在起始點周邊建立網格搜尋: 
+		
+		$$
+		\Theta_{0}= (2.3, 0.046, 0.0825, -0.53, 0.054)
+		$$
+		
+		RMSE: 0.8658939945597309
+		
+		\subsubsection{暴力算法 (Brute-Force Algorithm)}
+		\begin{tcolorbox}[width=\linewidth, colframe=OliveGreen, title=Grid Search Algorithm]
+			
+			\includegraphics[max width=0.6\textwidth, center]{brute}
+			
+			Result: Optimal parameter set $\Theta^{*}$ is the one $\mathrm{w} /$ the smallest $e$
+		\end{tcolorbox}
+		
+		網格搜尋的解法: 
+		
+		$$
+		\Theta^{*}= (1.8, 0.046, 0.0925, -0.63, 0.044)
+		$$
+		
+		最優 RMSE: 0.367041260636844
+		
+		\includegraphics[max width=0.6\textwidth, center]{2025_03_28_a31b509f4a5e9aec7161g-42}
+		\captionof{figure}{市場和模型對比}
+		
+		
+		\subsection{Nelder-Mead Simplex Algorithm}
+		\begin{itemize}
+			\item It performs a search in n-dimensional space using heuristic techniques.
+			\item \texttt{fmin} in the optimization package \texttt{scipy.optimize} in Python provides the Nelder-Mead Simplex algorithm.
+			\item The algorithm only uses function values, not derivatives.
+		\end{itemize}
+		
+		\begin{itemize}
+			\item 優勢: 
+			\begin{enumerate}
+				\item 不需要導數. 
+				\item 目標函數可以是非平滑的. 
+			\end{enumerate}
+			
+			\item 劣勢: 
+			\begin{enumerate}
+				\item 在高維情況下效率變差. 
+				\item 儘管距離最小值尚遠, 仍可能經過許多次迭代但改善甚微. 
+				\item 無法保證所得解為全域最小值. 
+			\end{enumerate}
+		\end{itemize}
+		
+		\subsubsection{內德爾-米德方法的起始點 (Starting Point for Nelder-Mead)}
+		起始點: 
+		
+		$$
+		\Theta_{0}= (2.3, 0.046, 0.0825, -0.53, 0.054)
+		$$
+		
+		RMSE: 0.8658939945597309
+		
+		解: 
+		
+		$$
+		\Theta_{\text {Nelder-Mead }}^{*}= (1.9524, 0.0469, 0.1159, -0.7406, 0.0397)
+		$$
+		
+		最優 RMSE: 0.2790085800881256
+		
+		\includegraphics[max width=0.6\textwidth, center]{2025_03_28_a31b509f4a5e9aec7161g-48}
+		\captionof{figure}{Market vs. Model}
+		
+		\subsubsection{$\Theta_{ {Brute-Force}}^{*}$ 和 $\Theta_{{Nelder-Mead}}^{*}$ 之間的誤差曲面}
+		
+		$$
+		\begin{aligned}
+			\Theta_{\text {Brute-Force }}^{*} & = (1.8, 0.046, 0.0925, -0.63, 0.044) \\
+			\Theta_{\text {Nelder-Mead }}^{*} & = (1.6421, 0.0473, 0.1233, -0.5627, 0.0398)\\
+			\Theta&=\alpha \Theta_{\text {Brute-Force }}^{*}+ (1-\alpha) \Theta_{\text {Nelder-Mead }}^{*}
+		\end{aligned}
+		$$
+		
+		在此處時間 $\alpha \in (-0.5, 1.5)$.
+		
+		
+		\includegraphics[max width=0.6\textwidth, center]{2025_03_28_a31b509f4a5e9aec7161g-50}
+		\captionof{figure}{The Error Surface}
+		
+		
+		\subsection{BFGS 算法 (BFGS Algorithm)}
+		\begin{itemize}
+			\item 它屬於擬牛頓 (quasi-Newton)方法. 
+			\item 是一種用於最小化目標函數的迭代方法. 
+			\item Python 的 scipy.optimize 套件中的 \texttt{fmin\_bfgs} 提供了 Broyden-Fletcher-Goldfarb-Shanno (BFGS) 的算法. 
+		\end{itemize}
+		
+		\begin{itemize}
+			\item 優勢: 
+			\begin{enumerate}
+				\item 如果目標函數是凸的則迅速收斂. 
+			\end{enumerate}
+			
+			\item 劣勢: 
+			\begin{enumerate}
+				\item 可能會卡在鞍點 (saddle point). 
+				\item 目標函數應該是平滑的. 
+				\item 無法保證所得解為全域最小值. 
+			\end{enumerate}
+		\end{itemize}
+		
+		\subsubsection{Starting point for BFGS}
+		起始點: 
+		
+		$$
+		\Theta_{0}= (2.3, 0.046, 0.0825, -0.53, 0.054)
+		$$
+		
+		RMSE: 0.8658939945597309
+		
+		解: 
+		
+		$$
+		\Theta_{B F G S}^{*}= (3.6941, 0.0478, 0.6059, -0.2186, 0.0422)
+		$$
+		
+		最優 RMSE: 0.2660977948917888
+		
+		\includegraphics[max width=0.6\textwidth, center]{2025_03_28_a31b509f4a5e9aec7161g-56}
+		\captionof{figure}{Market vs. Model}
+		
+		\subsection{$\Theta_{ {Brute-Force }}^{*} \text{ 和 } \Theta_{B F G S}^{*}$ 之間的誤差曲面 (Error Surface Between $\Theta_{ {Brute-Force }}^{*} \text{ and } \Theta_{B F G S}^{*}$)}
+		$$
+		\begin{aligned}
+			\Theta_{\text {Brute-Force }}^{*} & = (1.8, 0.046, 0.0925, -0.63, 0.044) \\
+			\Theta_{BFGS}^{*} & = (3.6941, 0.0478, 0.6059, -0.2186, 0.0422)\\
+			\Theta &{=} \alpha \Theta_{\text {Brute-Force }}^{*}+ (1-\alpha) \Theta_{\text {BFGS }}^{*}
+		\end{aligned}
+		$$
+		
+		此處有 $\alpha \in (-0.5, 1.5)$.
+		
+		\begin{center}
+			\includegraphics[max width=0.6\textwidth]{2025_03_28_a31b509f4a5e9aec7161g-58}
+		\end{center}
+		
+		\subsection{$\Theta_{ {Nelder-Mead }}^{*} \text{之間} \Theta_{B F G S}^{*}$ 之間的誤差曲面 (Error surface between $\Theta_{ {Nelder-Mead }}^{*} \text{and}  \Theta_{B F G S}^{*}$)}
+		
+		$$
+		\begin{aligned}
+			\Theta_{\text {Nelder-Mead }}^{*} & = (1.9524, 0.0469, 0.1159, -0.7406, 0.0397) \\
+			\Theta_{\text {BFGS }}^{*} & = (3.6941, 0.0478, 0.6059, -0.2186, 0.0422)
+		\end{aligned}
+		$$
+		$$
+		\Theta^{\circ} =\alpha \Theta_{\text {Nelder-Mead }}^{*}+ (1-\alpha) \Theta_{B F G S}^{*}
+		$$
+		
+		此處有 $\alpha \in (-0.5, 1.5)$.
+		
+		\begin{center}
+			\includegraphics[max width=0.6\textwidth]{2025_03_28_a31b509f4a5e9aec7161g-60}
+		\end{center}
+		
+		\section{模型 (Models)}
+		\subsection{區域波動率模型 (Local Volatility (Derman-Kani) Model)}
+		$$
+		d S_{t}= (r (t)-q (t)) S_{t} d t+\sigma\left (S_{t}, t\right) S_{t} d W_{t}
+		$$
+		
+		這裡的 $\sigma\left (S_{t}, t\right)$ 是一個確定性函數, 稱為局部波動率 (local volatility), 杜派爾偏微分方程 (Dupire PDE)能夠給出所有履約價與到期日下的歐式看漲期權價格. 
+		
+		
+		$$
+		-\frac{\partial C}{\partial T}+\frac{1}{2} \sigma^{2} (K, T) K^{2} \frac{\partial^{2} C}{\partial K^{2}}- (r (T)-q (T)) K \frac{\partial C}{\partial K}=q (T) C
+		$$
+		
+		假設市場報價給出期權價格 $C\left (K_{i}, T_{j}\right)$, 則可以求得局部波動率曲面 (local volatility surface)如下: 
+		
+		
+		$$
+		\sigma (K, T)= (\frac{\frac{\partial C}{\partial T}+ (r (T)-q (T)) K \frac{\partial C}{\partial K}+q (T) C}{\frac{1}{2} K^{2} \frac{\partial^{2} C}{\partial K^{2}}})^{1 / 2} 
+		$$
+		
+		
+		\subsection{區域波動率的建立 (Construction of Local Volatility)}
+		\begin{itemize}
+			\item (a)若要使用 杜派爾方程, 必須擁有非常平滑的期權價格曲面 $C (K, T)$, 此外還需能計算曆差 (calendar spread)$\frac{\partial C}{\partial T}$、蝶式價差 (butterfly spread)$\frac{\partial C}{\partial K}$, 以及對履約價的二階偏導數 $\frac{\partial^{2} C}{\partial K^{2}}$. 
+			\item (b)若只有少量報價, 可應用雙三次樣條 (bi-cubic spline), 並希望其生成的曲面足夠平滑以便可微分. 
+			\item (c)可採用 Hirsa–Courtadon–Madan 方法.
+		\end{itemize}
+		
+		$$
+		C\left (K_{i}, T_{j}\right) \underset{\text { 校準 }}{\Longrightarrow} \Theta_{A} \underset{\text { 模型價格 }}{\Longrightarrow} C (K, T) \forall K, T \underset{\text {帶入}}{\Longrightarrow} \sigma (K, T)
+		$$
+		
+		\subsection{常彈性波動率模型 (Constant Elasticity of Variance (CEV) Model)}
+		
+		$$
+		d S_{t}= (r-q) S_{t} d t+\delta S_{t}^{\beta+1} d W_{t}
+		$$
+		
+		
+		\begin{center}
+			\begin{tabular}{|c|c|c|c|c|c|}
+				\hline
+				\textbf{Time to Maturity}& \textbf{$\sigma$} & \textbf{$\beta$} & \textbf{$r$ }& \textbf{$q$} & \textbf{Spot} \\
+				\hline
+				0.07934 & 0.2162 & -2.1100 & 0.0663 & 0.0125 & 1389.459 \\
+				\hline
+				0.15585 & 0.2239 & -4.2195 & 0.0663 & 0.0128 & 1389.869 \\
+				\hline
+				0.40504 & 0.2202 & -2.6892 & 0.0667 & 0.0119 & 1389.459 \\
+				\hline
+				0.65424 & 0.2208 & -2.1729 & 0.0660 & 0.0117 & 1389.708 \\
+				\hline
+				0.92273 & 0.2257 & -1.9863 & 0.0654 & 0.0116 & 1390.906 \\
+				\hline
+			\end{tabular}
+		\end{center}
+		\captionof{table}{CEV Parameters Obtained from Calibration of the S\&P 500 on October 19, 2000}
+		
+		\begin{itemize}
+			\item 我們注意到參數 $\sigma$ 在不同到期日之間相對穩定. 
+			\item 參數 $\beta$ 隨著到期日增加而下降, 似乎此參數試圖同時調整隱含偏度與峰度的變化. 
+			\item 雖然不太清楚哪一個因素是主導影響. 
+			\item $\beta$ 的變動較難以解釋. 
+		\end{itemize}
+		
+		\subsection{赫斯頓隨機波動模型 (Heston Stochastic Volatility Model)}
+		$$
+		\begin{aligned}
+			d S_{t}& = (r-q) S_{t} d t+\sqrt{v_{t}} S_{t} d W_{t}^{1} \\
+			d v_{t}& =\kappa\left (\eta - v_{t}\right) d t+\lambda \sqrt{v_{t}} d W_{t}^{2} \\
+			d W_{t}^{1} d W_{t}^{2}&=\rho dt
+		\end{aligned}
+		$$
+		需要校準的參數為 $\Theta = \left\{\kappa, \eta, \lambda, \rho, v_{0}\right\}$.   
+		對於平方根過程 (square-root process), 方差始終為正；若滿足條件 $2\kappa \eta > \lambda^{2}$, 則方差永遠不會達到零. 
+		
+		\subsection{混合模型 — 隨機局部波動率模型 (Stochastic Local Volatility (SLV) Model)}
+		
+		隨機局部波動率模型 (SLV)是局部波動率模型與隨機波動率模型的混合體, 其形式如下所示: 
+		
+		
+		$$
+		\begin{aligned}
+			d S_{t} & = (r-q) S_{t} d t+L\left (S_{t}, t\right) V_{t} S_{t} d W_{t}^{1} \\
+			d V_{t} & =\kappa\left (\eta-V_{t}\right) d t+\lambda V_{t} d W_{t}^{2} \\
+			d W_{t}^{1} d W_{t}^{2} & =\rho d t
+		\end{aligned}
+		$$
+		
+		給定參數組 $\Theta$, 我們可以透過校準槓桿函數 (leverage surface)來擬合香草期權 (vanilla options). 若更換另一組參數, 我們仍可透過重新校準槓桿面來匹配香草期權, 但這將對應於不同的資產動態行為. 
+		
+		首先使用 Dupire 方程計算 $\sigma (S_t, t)$；再透過條件期望的積分形式來進行估計, 選擇合適的 $\kappa, \theta, \lambda, \rho$, 使模型儘可能貼近市場上觀察到的香草期權價格. 
+		
+		
+		\subsection{方差伽馬模型 (Variance Gamma (VG) Model)}
+		Table: VG parameters obtained from calibration of the S\&P 500 on October 19, 2000
+		
+		\begin{center}
+			\begin{tabular}{|c|c|c|c|c|c|c|}
+				\hline
+				\textbf{Time to Maturity}& \textbf{$\sigma$} & \textbf{$\nu$} & \textbf{$r$} &\textbf{ $r$}& \textbf{$q$} & \textbf{Spot} \\
+				\hline\hline
+				0.07934 & 0.2085 & 0.0735 & -0.4986 & 0.0663 & 0.0125 & 1389.459 \\
+				0.15585 & 0.2100 & 0.1267 & -0.3599 & 0.0663 & 0.0128 & 1389.869 \\
+				0.40504 & 0.1925 & 0.2509 & -0.2820 & 0.0667 & 0.0119 & 1389.459 \\
+				0.65424 & 0.1902 & 0.4352 & -0.2283 & 0.0660 & 0.0117 & 1389.708 \\
+				0.92273 & 0.1939 & 0.6088 & -0.1991 & 0.0654 & 0.0116 & 1390.906 \\
+				\hline
+			\end{tabular}
+		\end{center}
+		
+		\section{模型風險 (Model Risk)}
+		\subsection{模型風險的評估 (Assessment of Model Risk)}
+		
+		利用香草期權的市場數據, 對赫斯頓模型與 VGSA 模型進行校準, 以獲得參數 $\Theta_{\text{Heston}}$ 與 $\Theta_{\text{VGSA}}$
+		
+		
+		$$
+		\begin{aligned}
+			& C\left (K_{ {i }} {T}_{j}\right)^{\text { }} \underset{\text { calibration }}{\Longrightarrow} \Theta_{\text {Heston }} \\
+			& C\left (K_{i}, T_{j}\right) \underset{\text { calibration }}{\Longrightarrow} \Theta_{V G S A}
+		\end{aligned}
+		$$
+		
+		使用這些參數以獲得平滑的波動率曲面, 然後利用杜普爾模型計算局部波動率曲面: 
+		
+		\[
+		\text{ (1)} \quad \Theta_{\text{Heston}} \Rightarrow C (K, T) \Rightarrow \sigma (K, T) \Rightarrow \text{Exotic}
+		\]
+		\[
+		\phantom{\text{ (1)}} \quad \Downarrow
+		\quad \text{B-M-S w/ LV} \Rightarrow \text{Exotic}
+		\]
+		
+		\[
+		\text{ (2)} \quad \Theta_{\text{VGSA}} \Rightarrow C (K, T) \Rightarrow \sigma (K, T) \Rightarrow \text{Exotic}
+		\]
+		\[
+		\phantom{\text{ (2)}} \quad \Downarrow
+		\quad \text{B-M-S w/ LV} \Rightarrow \text{Exotic}
+		\]
+		
+		\[
+		\text{ (3)} \quad \Theta_{\text{Heston}} \Rightarrow \text{simulation} \Rightarrow \text{Exotic}
+		\]
+		
+		% Path (4)
+		\[
+		\text{ (4)} \quad \Theta_{\text{VGSA}} \Rightarrow \text{simulation} \Rightarrow \text{Exotic}
+		\]
+		
+	\end{document}

@@ -1,0 +1,1045 @@
+\documentclass[letterpaper]{article} 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{ctex} 
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage[dvipsnames]{xcolor}
+\colorlet{LightRubineRed}{RubineRed!70}
+\colorlet{Mycolor1}{green!10!orange}
+\definecolor{Mycolor2}{HTML}{00F9DE}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{lipsum}
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage[export]{adjustbox}
+\graphicspath{ {./images/} }
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{tcolorbox}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref} 
+\usepackage{xcolor} % For custom colors
+\lstset{
+	language=Python,                % Choose the language (e.g., Python, C, R)
+	basicstyle=\ttfamily\small, % Font size and type
+	keywordstyle=\color{blue},  % Keywords color
+	commentstyle=\color{gray},  % Comments color
+	stringstyle=\color{red},    % String color
+	numbers=left,               % Line numbers
+	numberstyle=\tiny\color{gray}, % Line number style
+	stepnumber=1,               % Numbering step
+	breaklines=true,            % Auto line break
+	backgroundcolor=\color{black!5}, % Light gray background
+	frame=single,               % Frame around the code
+}
+\usepackage{float}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+	\usepackage[]{amssymb} %gives us the character \varnothing
+	
+	\title{Lecture 7, IEOR 4732\\
+		\small{Monte Carlo Integration and Stochastic Differential Equations\\
+			蒙特卡羅積分和隨機微分方程
+		}
+	}
+	\author{Zongyi Liu}
+	\date{Thursday, March 6, 2025}
+
+\begin{document}
+		\maketitle
+\tableofcontents
+
+\section{日程 (Agenda)}
+\begin{itemize}
+	\item 布朗橋（Brownian Bridge）
+	\item 蒙特卡羅積分（Monte Carlo Integration）
+	\item 準蒙地卡羅方法（Quasi Monte Carlo）
+	\item 隨機微分方程的數值積分（Numerical Integration of SDEs）
+	\item 隨機微分方程的模擬（Simulation of SDEs）
+	\begin{itemize}
+		\item 擴散過程（diffusion processes）
+		\item 純粹跳躍過程（pure jump processes）
+	\end{itemize}
+\end{itemize}
+
+\section{布朗橋 (Brownian Bridge)}
+\subsection{引入 (Introduction)}
+為了模擬一個在 $t$ 上的維納過程, 有:
+
+$$
+W_{t}-W_{0} \sim \sqrt{t} z \quad \text { where } z \sim \mathcal{N}(0,1)
+$$
+
+且知道 $W_{0}=0$, 則它變為:
+
+$$
+W_{t} \sim \sqrt{t} z^{2}
+$$
+
+\begin{itemize}
+	\item 假設我們已經模擬出 $W_{t_{1}}$ 和 $W_{t_{2}}$
+	\item 現在希望在區間 $\left[t_{1}, t_{2}\right]$ 內填補點，即在已生成的點 $W_{t_{1}}$ 和 $W_{t_{2}}$ 之間進行插值
+	\item 為此，我們使用布朗橋（Brownian bridge），要求其通過 $W_{t_{1}}$ 和 $W_{t_{2}}$ 這兩個已知值
+
+\end{itemize}
+
+\textbf{定義}
+
+布朗橋（Brownian bridge）$x$ 是一個在時間 $t_{1}$ 取值為 $a$，在時間 $t_{2}$ 取值為 $b$ 的隨機過程。在 $t_{1}$ 與 $t_{2}$ 之間，$x$ 的行為類似於布朗運動。布朗橋滿足以下條件：
+
+$$
+d x_{t}=\frac{b-x_{t}}{t_{2}-t} d t+d B_{t}, \quad x_{t_{1}}=a
+$$
+
+此處 $B_{t}$ 是一個標準布朗運動
+
+\subsection{SDE}
+這個 SDE 可以被顯性解出, 為:
+
+$$
+x_{t}=a \frac{t_{2}-t}{t_{2}-t_{1}}+b \frac{t-t_{1}}{t_{2}-t_{1}}+\left(t_{2}-\Delta t\right)^{t} \int_{t_{1}}^{t} \frac{d B_{u}}{t_{2}-u}
+$$
+
+已知 $ f{ }_{x}$ 的條件分佈是正態的. 
+
+$$
+\begin{aligned}
+& \mathbb{E}_{E} t_{1} \\
+&\left.x_{t}\right)=a+(b-a) \frac{t-t_{1}}{t_{2}-t_{1}} \\
+& \operatorname{Var}_{t_{1}}\left(x_{t}\right)=\frac{\left(t_{2}-t\right)\left(t-t_{1}\right)}{t_{2}-t_{1}}
+\end{aligned}
+$$
+
+\subsection{案例 (Example)}
+\begin{itemize}
+  \item 在區間 $[0, T]$ 上構造一條布朗橋（Brownian bridge），以計算其在各個時刻 $t_j$ 的取值，其中 $j = 1, \ldots, m-1$
+\end{itemize}
+
+$$
+0<t_{1}<t_{2}<\cdots<t_{m-1}<t_{m}=T
+$$
+
+\begin{itemize}
+	\item 首先在 $T = t_{\text{trm}}$ 處生成 $W_T$
+	\item 然後利用布朗橋來獲得整條路徑在 $\left\{ t_1, t_2, t_3, \ldots, t_{m-1} \right\}$ 上的取值
+	\item 利用已知的 $W_T$ 和 $W_{t_0} = W_0 = 0$，生成 $W_{t_1}$
+	\item 接著利用 $W_{t_1}$ 和 $W_T$ 生成 $W_{t_2}$，再利用 $W_{t_2}$ 和 $W_T$ 生成 $W_{t_3}$
+	\item 如此構造過程持續進行，直到我們到達 $t_{m-1}$
+	\item 離散取樣的布朗運動路徑，是透過在時刻 $T, t_1, t_2, t_3, \ldots, t_{m-1}$ 上依下式確定其取值而生成的：
+\end{itemize}
+
+
+$$
+\begin{aligned}
+& W_{T}=\sqrt{T}_{z_{1}} \\
+& W_{t_{1}}=W_{t_{0}}+\left(W_{T}-W_{t_{0}} \frac{t_{1}-t_{0}}{T-t_{0}}+\operatorname{tare}^{0} \sqrt{\frac{\left(T-t_{1}\right)\left(t_{1}-t_{0}\right)}{T-t_{0}}} z_{2}\right. \\
+& W_{t_{2}}=W_{t_{1}}+\left(W_{T-{ }_{-}^{2}} W_{t_{1}}\right) \frac{t_{2}-t_{1}}{T-t_{1}}+\sqrt{\frac{\left(T-t_{2}\right)\left(t_{2}-t_{1}\right)}{T-t_{1}}} z_{3} \\
+& W_{t_{m j-1}-1}=W_{t_{m-2}}+\left(W_{T}-W_{t_{m-2}}\right) \frac{t_{m-1}-t_{m-2}}{T-t_{m-2}}+\sqrt{\frac{\left(T-t_{m-1}\right)\left(t_{m-1}-t_{m-2}\right)}{T-t_{m-2}}} z_{m} \\
+& \text { where } z_{i} \text { for } i=1, \ldots, m \text { are i.i.d. } \mathcal{N}(0,1)
+\end{aligned}
+$$
+
+\section{蒙特卡羅積分 (Monte Carlo Integration)}
+\subsection{定義 (Definition)}
+\begin{itemize}
+  \item consider
+\end{itemize}
+
+$$
+\int_{I_{s}} f(x) d x
+$$
+
+此處 $I_{s}$ 是 $s$ 維單位立方體，即 $I_{s} = [0,1] \times \cdots \times [0,1]$
+
+
+\begin{itemize}
+	\item 希望對 $s = 20$ 的情況數值計算該積分
+	\item 若每個維度僅使用 10 個離散點，則總共會有 $10^{20}$ 個網格點
+	\item 由於維度過高導致積分計算困難，這種現象被稱為「維度詛咒」（curse of dimensionality）
+	\item 為克服這一障礙，我們採用蒙地卡羅積分（Monte Carlo integration）方法
+	\item 相對於嘗試使用某種數值積分公式來計算該積分
+	\item 我們從集合中抽樣 $x_{1}, \ldots, x_{N}$，即 $N$ 個均勻分布的向量，並在這些點上對函數 $f$ 進行評估
+	\item 然後計算以下總和，作為對積分的近似：
+\end{itemize}
+
+
+$$
+\theta_{N}=\frac{1}{N} \sum_{i=1}^{N} f\left(x_{i}\right) \hat{l}_{s}
+$$
+
+其中 $\hat{I}_{s}$ 是積分區域 $I_{s}$ 的體積
+
+\begin{itemize}
+  \item $I_{s}=[0,1] \times \cdots \times[0,1]$ 所以它有體積 1
+\end{itemize}
+
+\begin{itemize}
+  \item 這個總和是積分的估值
+\end{itemize}
+
+$$
+\int_{I_{s}} f(x) d x \approx \theta_{N}
+$$
+
+\begin{itemize}
+  \item 大數定理:
+\end{itemize}
+
+
+\[
+\lim_{N \to \infty} \theta_N = \lim_{N \to \infty} \frac{1}{N} \sum_{i=1}^{N} f(x_i)\, \hat{I}_s
+\]
+\[
+= \hat{I}_s \, \mathbb{E}(f(x))
+\]
+\[
+= \hat{I}_s \int_{I_s} f(x)\, \frac{1}{\hat{I}_s} \, dx
+\]
+\[
+= \int_{I_s} f(x)\, dx
+\]
+
+\begin{itemize}
+	\item 利用以下事實：$x_i$ 在 $I_s$ 上服從均勻分佈，其概率密度為 $\frac{1}{\hat{I}_s}$
+	
+	\item 探討當 $N \uparrow \infty$ 時，$\theta_N$ 收斂到積分值的速度有多快
+	
+	\item 定義：
+
+\end{itemize}
+
+
+$$
+\begin{aligned}
+& \delta_{N} \equiv \int_{I_{s}} f(x) d x-\theta_{N} \\
+& =\int_{I_{s}} f(x) d x \ln ^{22^{2}} \frac{P^{n^{2}} N}{N} \sum_{i=1} f\left(x_{i}\right) \widehat{I}_{s} \\
+& \text { ) } \frac{1}{N} \sum_{i=1}^{N}\left(\int_{l_{s}} f(x) d x-f\left(x_{i}\right) \widehat{I}_{s}\right) \\
+& =\frac{1}{N} \sum_{i=1}^{N}\left(\int_{I_{s}} f(x) \frac{1}{\hat{l}_{s}} d x-f\left(x_{i}\right)\right) \hat{I}_{s} \\
+& =\frac{\widehat{l}_{s}}{N} \sum_{i=1}^{N}\left(\int_{I_{s}} f(x) \frac{1}{\hat{l}_{s}} d x-f\left(x_{i}\right)\right)
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 定義:
+\end{itemize}
+
+$$
+\begin{aligned}
+& \Delta f\left(x_{i}\right)=\int_{I_{s}} f(x) \frac{1}{\hat{l}_{s}} d x-f\left(x_{i}\right) \\
+& \delta_{N} \equiv=\frac{N_{s}^{2}}{N} \sum_{i=1}^{n} \Delta f\left(x_{i}\right)
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item $\Delta f\left(x_{i}\right)$ 有為零期望:
+\end{itemize}
+
+$$
+\mathbb{E}\left(\Delta f\left(x_{i}\right)\right)=0
+$$
+
+\begin{itemize}
+	\item 此外，$\Delta f\left(x_{i}\right)$ 和 $\Delta f\left(x_{j}\right)$ 是不相關的
+\end{itemize}
+
+$$
+\mathbb{E}\left(\Delta f\left(x_{i}\right) \Delta f\left(x_{j}\right)\right)=\mathbb{E}\left(\Delta f\left(x_{i}\right)\right) \mathbb{E}\left(\Delta f\left(x_{j}\right)\right)=0
+$$
+
+\begin{itemize}
+  \item  $\delta_{N}$ 的方差
+\end{itemize}
+
+$$
+\begin{aligned}
+\operatorname{Var}\left(\delta_{N}\right) & =\mathbb{E}\left(\delta_{N}^{2}\right)-\left(\mathbb{E}\left(\delta_{N}\right)\right)^{2} \\
+& =\frac{\widehat{l}_{s}^{2}}{N^{2}} \sum_{i=1}^{N} \mathbb{E}\left(\Delta f\left(x_{i}\right)^{2}\right)+0 d s \text { in find } \\
+& =\frac{\widehat{l}_{s}^{2}}{N}\left\{\int_{\hat{r}_{s}} f^{2}(x) \frac{1}{l_{s}} d x-\left(\int_{I_{s}} f(x) \frac{1}{\widehat{l}_{s}} d x\right)^{2}\right\}
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 定義:
+\end{itemize}
+
+$$
+\sigma^{2}(f)=\int_{I_{s}} f^{2}(x) \frac{1}{\hat{I}_{s}} d x-\left(\int_{I_{s}} f(x) \frac{1}{I_{s}} d x\right)^{2}
+$$
+
+\begin{itemize}
+  \item 我們得到以下的誤差項的方差:
+\end{itemize}
+
+$$
+\operatorname{Var}\left(\delta_{N}\right)=\frac{\widehat{l}_{s}^{2}}{N} \sigma^{2}(f)
+$$
+
+\begin{itemize}
+  \item 收斂率為:
+\end{itemize}
+
+$$
+\sqrt{\operatorname{Var}\left(\delta_{N}\right)} \approx \frac{1^{N}}{\sqrt{N}}
+$$
+
+\begin{itemize}
+	\item 從方差的角度可以看出，蒙地卡羅積分如何克服維度詛咒（curse of dimensionality）
+	
+	\item 對於維度為 $s=20$ 的積分，當 $N = 10^{6}$ 時，其誤差約為 $O\left( \frac{10}{\sqrt{N}} \right)^2 \sim \frac{1}{\sqrt{10^{6}}} = 10^{-3}$
+
+\end{itemize}
+
+\subsection{要點 (Important Remarks)}
+
+\begin{itemize}
+	\item 誤差項 $\delta_N$ 的大小與維度 $s$ 無關
+	\item 誤差的收斂速率為 $O\left(\frac{1}{\sqrt{N}}\right)$，使得收斂速度相對較慢
+	\item 因此應該採用某種方差縮減方法（variance reduction method），這部分將在後續討論
+	\item 一個誤差上界如下：
+\end{itemize}
+
+
+$$
+\int_{I_{s}} f(x) d x \approx \frac{\hat{l}_{s}}{N} \sum_{i=1}^{N} f\left(x_{i}\right) \pm \frac{\hat{l}_{s}^{2}}{N} \sigma^{2}(f)
+$$
+
+if $f(x)$ is constant, $f(x) \equiv c$, then
+
+$$
+\begin{aligned}
+& \sigma^{2}(f)=\int_{l_{s}} f^{2}(x) \frac{1}{\hat{I}_{s}} d x-\left(\int_{l_{s}} f(x) \frac{1}{\hat{I}_{s}} d x\right)^{2}
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+& \stackrel{\text { ass }}{=} c^{2} \int_{I_{s}} \frac{1}{\hat{I}_{s}} d x-c^{2}\left(\int_{I_{s}} \frac{1}{\hat{I}_{s}} d x\right)^{2} \\
+& =c^{2}-c^{2} \\
+& =0
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 也就是說，如果被積函數是常數，那麼我們預期的結果就是該常數與積分區域體積的乘積，顯然不需要實際執行積分
+\item $\sigma^{2}(f)$ 的解釋是函數 $f(x)$ 偏離一個常數的程度
+\item 如果我們能找到一種變換，將座標 $x$ 轉換為新座標 $y$，使得變換後的函數較為平坦，那麼我們就可以降低蒙地卡羅積分的方差
+\item 這正是方差縮減（variance reduction）的核心思想
+\end{itemize}
+
+\subsection{準蒙特卡羅法 (Quasi-Monte Carlo Methods)}
+\begin{itemize}
+  \item 準蒙地卡羅方法（Quasi-Monte Carlo methods）可以被視為傳統蒙地卡羅方法的確定性對應方法
+\item 用於評估無解析解的多重積分問題
+\item 考慮以下情形：
+\end{itemize}
+
+$$
+\int_{i_{s}} f(x) d x
+$$
+
+在 $s$ 維單位立方體上，即 $I_{s} = [0,1] \times \cdots \times [0,1]$
+
+\begin{itemize}
+	\item 在傳統的蒙地卡羅積分中，我們選取一組點 $x_{1}, \ldots, x_{N}$，即一組偽隨機數列，並用以下方式來近似該積分：
+\end{itemize}
+
+$$
+\theta_{N}=\frac{1}{N} \sum_{i=1}^{N} f\left(x_{i}\right) \widehat{I}_{s}
+$$
+
+\begin{itemize}
+	\item 在準蒙地卡羅方法中，我們以確定性的方式選取點.
+	\item 更具體地說，準蒙地卡羅方法產生一組確定性的點列，這些點在 $s$ 維空間中具有最理想的分布.
+	\item 這些確定性的點列被稱為低偏差序列（low-discrepancy sequences）.
+\end{itemize}
+
+
+\subsection{案例 (Example)}
+$$
+\int_{0}^{1} \int_{0}^{1} x^{3}\left(1+y^{2}\right) d x d y y^{2}=\frac{1^{0}}{3}
+$$
+
+$$
+\frac{1}{N} \sum_{j=1}^{N} U_{j}^{3}\left(1+V_{j}^{2}\right)
+$$
+
+此處 $U_{j}$ 和 $V_{j}$ 是 i.i.d. $\mathcal{U}(0,1)$ for $j=1, \ldots, N$
+
+
+\begin{center}
+\includegraphics[max width=0.5\textwidth]{2025_03_07_c33339bc5022ea37b83eg-21}
+\end{center}
+\captionof{figure}{uniform random variables $0.35029$}
+
+
+\begin{center}
+\includegraphics[max width=0.5\textwidth, center]{2025_03_07_c33339bc5022ea37b83eg-22}
+\end{center}
+\captionof{figure}{low discrepancy sequence (Halton set) ${0 . 3 3 3 3 3}$}
+
+\section{隨機微分方程的數值積分 (Numerical Integration of SDEs)}
+\begin{itemize}
+  \item 考慮下列一維普遍化 SDE
+\end{itemize}
+
+$$
+\begin{aligned}
+d X_{t} & =\mu\left(X_{t}, t\right) d t+\sigma\left(X_{t}, t\right) d W_{t t^{2}}^{d s} t_{0} \leq t \leq T \\
+X\left(t_{0}\right) & =X_{0}
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 通過伊藤-泰勒擴展:
+\end{itemize}
+
+$$
+\begin{aligned}
+& X_{t}=X_{t 0}+\mu\left(X_{t_{0}}\right) \int_{t_{0}}^{t} d s+\sigma\left(X_{t_{0}}\right) \int_{t_{0}}^{t} d W(s) \\
+& e^{d u c a t}+\frac{1}{2} \sigma\left(X_{t_{0}}\right) \sigma^{\prime}\left(X_{t_{0}}\right)\left(\left[W(t)-W\left(t_{0}\right)\right]^{2}-\left(t-t_{0}\right)\right)+R
+\end{aligned}
+$$
+
+其中 $R$ 是餘項
+
+\begin{itemize}
+	\item 當我們模擬一個隨機微分方程時，實際上是在有限個時間點上生成該 SDE 離散版本的樣本.
+\end{itemize}
+
+
+$$
+\hat{X}_{\Delta t}, \hat{X}_{2 \Delta t}, \ldots, \hat{X}_{m \Delta t}
+$$
+
+\begin{itemize}
+	\item $m$ 表示時間步數，$\Delta t$ 表示時間步長, 假設子區間等距，則有 $\Delta t = \frac{T - 0}{m}$
+\end{itemize}
+
+
+$$
+\hat{X}_{t_{1}}, \hat{x}_{t_{2}}, \cos \hat{X}_{t_{j}}^{\hat{t}^{2 \tau}}, \ldots, \hat{X}_{t_{m}}
+$$
+
+\begin{itemize}
+  \item $t_{j}=t_{0}+j \Delta t=j \Delta t$ 對於 $j =1, \ldots, m$
+  \item 當 $\Delta t \rightarrow 0$ 時，我們的離散路徑將會收斂到連續路徑
+\item 對於區間 $\left[t_{j}, t_{j+1}\right]$，通過選擇
+\end{itemize}
+
+$$
+\begin{aligned}
+t_{0} & =t_{j} \\
+t & =t_{j+1} \\
+\Delta t & =t_{j+1}-t_{j} \\
+\Delta W_{j} & =W\left(t_{j+1}\right)-W\left(t_{j}\right)
+\end{aligned}
+$$
+
+我們得到以下的表達:
+
+$$
+\begin{aligned}
+& X_{t_{j+1}}=X_{t_{j}}+\mu\left(X_{t_{j}}\right) \Delta t+\sigma\left(X_{t_{j}}\right) \Delta W_{j}+\frac{1}{2} \sigma\left(X_{t_{j}}\right) \sigma_{j}^{\prime}\left(X_{t_{j}}\right)\left(\left(\Delta W_{j}\right)^{2}-\Delta t\right)+R
+\end{aligned}
+$$
+
+\section{隨機微分方程模擬 (Simulating SDEs)}
+\begin{itemize}
+	\item 歐拉格式（Euler Scheme）
+	\item 米爾施泰因格式（Milstein Scheme）
+	\item 龍格-庫塔格式（Runge–Kutta Scheme）
+\end{itemize}
+
+\subsection{歐拉格式 (Euler Scheme)}
+\begin{itemize}
+  \item 歐拉格式是用於離散化隨機微分方程（SDEs）最簡單的離散化方案
+  \item 保持前3個項會給我們顯性歐拉方法如下:
+\end{itemize}
+
+\begin{align*}
+	\hat{X}_{t_{j+1}} 
+	&= \hat{X}_{t_j} + \mu(\hat{X}_{t_j}, t_j) \Delta t + \sigma(\hat{X}_{t_j}, t_j) \Delta W_j \\
+	&= \hat{X}_{t_j} + \mu(\hat{X}_{t_j}, t_j) \Delta t + \sigma(\hat{X}_{t_j}, t_j) \sqrt{\Delta t} Z_j
+\end{align*}
+
+此處 $Z_{j}$ 是 i.i.d. $\mathcal{N}(0,1)$
+
+\begin{itemize}
+  \item 此近似將漂移項展開到 $O(\Delta t)$ 階，但僅將擴散項展開到 $O(\sqrt{\Delta t})$ 階
+\end{itemize}
+
+\subsection{米爾施泰因格式 (Milstein Scheme)}
+\begin{itemize}
+  \item 米爾施泰因格式在歐拉離散化的基礎上加上第二個擴散項，將擴散項的展開提升至 $O(\Delta t)$ 階.
+\item 它是通過保留所有 $O(\Delta t)$ 階的項而得出:
+\end{itemize}
+
+\begin{align*}
+	\hat{X}_{t_{j+1}} 
+	&= \hat{X}_{t_j} + \mu(X_{t_j}, t_j) \Delta t 
+	+ \sigma(X_{t_j}, t_j) \Delta W_j 
+	+ \frac{1}{2} \sigma(X_{t_j}, t_j) \sigma'(X_{t_j}, t_j) 
+	\left[ (\Delta W_j)^2 - \Delta t \right] \\
+	&= \hat{X}_{t_j} + \mu(\hat{X}_{t_j}, t_j) \Delta t 
+	+ \sigma(\hat{X}_{t_j}, t_j) \sqrt{\Delta t} Z_j 
+	+ \frac{1}{2} \sigma(X_{t_j}, t_j) \sigma'(X_{t_j}, t_j) 
+	\Delta t (Z_j^2 - 1)
+\end{align*}
+
+此處 $\sigma^{\prime}(x, t) = \frac{\partial}{\partial x}(\sigma(x, t))$
+
+\begin{itemize}
+  \item 雖然米爾施泰因格式具有更高階的離散精度，但它需要已知波動率函數的一階導數.
+\end{itemize}
+
+\subsection{龍格-庫塔格式 (Runge-Kutta Scheme)}
+
+\begin{itemize}
+	\item 米爾施泰因格式需要知道波動率函數的一階導數，但該導數可能不可得，或計算代價高昂.
+	\item 龍格–庫塔格式通過使用龍格–庫塔近似，避免了對波動率函數一階導數的需求，同時仍能保持相同的精度階數.
+\end{itemize}
+
+$$
+\begin{aligned}
+& \widehat{X}_{i} =X_{i}+\mu\left(X_{i}\right) \Delta t+\sigma\left(X_{i}\right) \sqrt{\Delta t} \\
+& X_{i +1}^{}=X_{i}+\mu\left(X_{i}\right) \Delta t+\sigma\left(X_{i}\right) \Delta W_{i} \\
+& +\frac{1}{2 \sqrt{\Delta t}}\left[\sigma\left(\widehat{X}_{i}\right)-\sigma\left(X_{i}\right)\right]\left(\left(\Delta W_{i}\right)^{2}-\Delta t\right)
+\end{aligned}
+$$
+
+\section{差分模型下的隨機微分方程模擬 (Simulating SDEs under Different Models)}
+\begin{itemize}
+	\item 幾何布朗運動（Geometric Brownian Motion, GBM）
+	\item 奧爾施泰因–烏倫貝克過程（Ornstein–Uhlenbeck Process）
+	\item 考克斯–英格索爾–羅斯模型（Cox–Ingersoll–Ross, CIR）
+	\item 帶有隨機波動率的幾何布朗運動（GBMSA，也稱 Heston 模型）
+	\item 方差伽馬模型（Variance Gamma, VG model）
+	\item 帶有隨機到達的方差伽瑪模型（Variance Gamma with Stochastic Arrival, VGSA）
+\end{itemize}
+
+
+\subsection{幾何布朗運動 (Geometric Brownian Motion)}
+\begin{itemize}
+  \item GBM 具有如下的 SDE:
+\end{itemize}
+
+$$
+d X_{t}=\mu X_{t} d t+\sigma X_{t} d W_{t}
+$$
+
+\begin{itemize}
+  \item 通過伊藤引理的解:
+\end{itemize}
+
+$$
+x_{T}=X_{0} \exp \left\{\left(\mu^{\prime} \frac{\sigma^{2}}{2}\right) T+\sigma W_{T}\right\}
+$$
+
+\begin{itemize}
+  \item 已知 $X_T$ 的分佈，因此我們可以直接模擬 $X_T$，無需進行離散化
+\end{itemize}
+
+$$
+X_{T}=X_{0} \exp \left\{\left(\mu-\frac{\sigma^{2}}{2}\right) T+\sigma \sqrt{T} Z\right\}
+$$
+
+where $Z \sim \mathcal{N}(0,1)$
+
+\subsection{奧爾施泰因-烏倫貝克過程 (Ornstein-Uhlenbeck (OU) Process)}
+\begin{itemize}
+  \item 奧爾施泰因-烏倫貝克過程具有如下 SDE:
+\end{itemize}
+
+$$
+d X_{t}=\kappa\left(\theta-X_{t}\right) d t+\sigma d W_{t}
+$$
+
+\begin{itemize}
+  \item 通過伊藤引理的解:
+\end{itemize}
+
+$$
+X_{T}=e^{-\kappa T} X_{0,}+e^{2} e^{e^{d}}\left(1-e^{-\kappa T}\right)+\sigma e^{\kappa T} \int_{0}^{T} e^{\kappa s} d W_{s}
+$$
+
+\begin{itemize}
+  \item 此時 $X_T$ 依賴於整條布朗運動路徑.
+\item 然而 $X_T$ 的分佈是已知的，因此我們可以直接模擬 $X_T$，無需對 SDE 進行離散化.
+\end{itemize}
+
+\subsection{CIR 過程 (CIR process)}
+CIR 過程具有如下的 SDE:
+
+
+\begin{equation*}
+d X_{t}=\kappa\left(\theta(t)-X_{t}\right) d t+\sigma \sqrt{X_{t}} d W_{t}^{n} \tag{1}
+\end{equation*}
+
+
+儘管該隨機微分方程（SDE）沒有明確的解析解，但我們並不一定需要解析解才能確定 $X_T$ 的分佈。在 $\theta(t) = \theta$ 為常數的情況下，我們知道 $X_T$ 服從一個非中心卡方分佈（non-central chi-squared distribution），因此可以較為容易地進行模擬。
+
+然而一旦轉為考慮具有時間變化的 $\theta(t)$ 的 CIR 過程，$X_T$ 的分佈就無法明確獲得。此時模擬 $X_T$ 的一種方法是對該 SDE 進行離散化並進行模擬。
+
+這種無法確定 $X_T$ 分佈的情況是非常常見的，因此在實踐上往往需要對隨機微分方程進行模擬.
+
+\subsection{韋斯切克和 CIR (Vesicek vs. CIR)}
+\begin{center}
+\includegraphics[max width=\textwidth]{CIR}
+\end{center}
+
+\subsection{赫斯頓隨機波動模型 (Heston Stochastic Volatility Model (GBMSA))}
+\begin{itemize}
+  \item 赫斯頓模型具有如下的 SDE:
+\end{itemize}
+
+$$
+\begin{aligned}
+d S_{t} & =r S_{t} d t+\sqrt{v_{t}} S_{t} d W_{S}(t), \\
+d v_{t} & =\kappa\left(\theta-v_{t}\right) d t+\sigma \sqrt{v_{t}} d W_{v}(t),
+\end{aligned}
+$$
+
+\begin{itemize}
+	\item 兩個布朗運動分量 $W_{S}(t)$ 與 $W_{v}(t)$ 具有相關係數 $\rho$
+	\item 在給定時間 $s_{\text{s}}$ 的條件下，對於 $t > s$，對方差過程進行歐拉離散化
+\end{itemize}
+
+
+$$
+v(t) \stackrel{p}{=} v(s)+\kappa(\theta-v(s)) \Delta t+\sigma \sqrt{v(s)} \sqrt{\Delta t} z_{v}
+$$
+
+此處 $\Delta t=t-s$ 有 $z_{v} \sim \mathcal{N}(0,1)$
+
+\begin{itemize}
+	\item 可以證明上述離散方案在正機率下可能產生負值
+	\item 這正是該方案的主要問題
+	\item 文獻中針對此問題提出了若干修正方法
+	\item Lord 等人將多種歐拉格式統一於以下框架中：
+\end{itemize}
+
+$$
+v(t)=f_{1}(v(s))+\kappa\left(\theta-f_{2}(v(s))\right) \Delta t+\sigma \sqrt{f_{3}(v(s))} \sqrt{\Delta t} z_{v}
+$$
+
+\begin{itemize}
+  \item 所有的函數應滿足：對於 $x \geq 0$，有 $f_{i}(x) = x$，並且 $f_{3}(x) \geq 0$ 對所有 $x$ 成立
+\item 被認為最有效的方法是完全截斷格式（full truncation scheme）
+\item 該方法選擇：$f_{1}(x) = x,\quad f_{2}(x) = f_{3}(x) = x^{+}$，其中 $x^{+} = \max(x, 0)$
+\item 由此得到的離散方案為：
+\end{itemize}
+
+$$
+v(t)=v(s)+\kappa\left(\theta-v(s)^{+}\right) \Delta t+\sigma \sqrt{v(s)^{+}} \sqrt{\Delta t} z_{v}
+$$
+
+\begin{itemize}
+	\item 可以選擇直接對價格過程應用歐拉離散化方案，或從其精確分佈中進行模擬
+	\item 直接離散化得到以下的歐拉方案：
+\end{itemize}
+
+$$
+S(t)=S(s)+r S(s) \Delta t+S(s) \sqrt{v(t)+} \sqrt{\Delta t} z_{S}
+$$
+
+\begin{itemize}
+  \item 另一方法來看, 通過使用伊藤引理可以得到確切解:
+\end{itemize}
+
+$$
+S(t)=S(s) \exp \left[\int_{s}^{1 v}\left(r-\frac{1}{2} v(u)\right) d u+\int_{s}^{t} \sqrt{v(u)} d W_{S}(u)\right]
+$$
+
+\begin{itemize}
+  \item 通過取對數並應用歐拉離散化，我們得到:
+\end{itemize}
+
+$$
+\log (S(t))=\log (S(s))+\left[r-\frac{1}{2} v(s)^{+}\right] \Delta t+\sqrt{v(s)^{+}} \sqrt{\Delta t} z_{S}
+$$
+
+where $z_{S}=\rho z_{v}+\sqrt{1-\rho^{2}} z$ with $z \sim \mathcal{N}(0,1)$
+
+\subsection{完全截斷算法 (Full Truncation Algorithm)}
+\begin{itemize}
+	\item 赫斯頓模型的完全截斷格式（full truncation scheme）可總結如下：
+	\item 從標準常態分布中生成一個隨機樣本 $z_v$
+	\item 在已知 $v(s)$ 的情況下，計算 $v(t)$
+	\item 再從標準常態分布中生成一個隨機樣本 $z$，並設 $z_S^0 = \rho z_v + \sqrt{1 - \rho^2} z$
+	\item 在已知 $\log S(s)$ 的情況下，計算 $\log S(t)$
+	\item 該方法在較粗時間間隔下會產生偏差的估計
+	\item 有研究顯示，至少需使用每年 32 個時間步（time steps per year）才能保證偏差足夠小
+\end{itemize}
+
+
+\section{純粹跳躍模擬 (Simulating Pure Jump)}
+\subsection{方差伽馬過程 (Variance Gamma Process)}
+方差伽馬過程 $X(t ; \sigma, \nu, \theta)$ 是通過將具有漂移 $\theta$ 和波動率 $\sigma$ 的布朗運動，評估於一個由伽瑪過程 $\gamma(t ; 1, \nu)$ 所給定的隨機時間下而獲得的；該伽馬過程具有單位期望速率和方差速率 $\nu$，如下所示：
+
+$$
+X(t ; \sigma, \nu, \theta)=\theta \gamma(t ; \mathbb{d} \mathbb{r}, \nu)+\sigma W(\gamma(t ; 1, \nu))
+$$
+
+它具有特徵函數:
+
+$$
+\phi(\psi)=\mathbb{E}\left(e^{i u x_{t}}\right)=\left(\frac{1}{1-i u \theta \nu+\sigma^{2} u^{2} \nu / 2}\right)^{t / \nu}
+$$
+
+假設股票價格過程由具有參數 $\sigma, \nu, \theta$ 的幾何方差伽瑪（geometric VG）分佈給出，則時間 $t$ 時的對數價格為：
+
+$$
+\ln S_{t}=\ln S_{0}+(r-q+\omega) t^{2}+X(t ; \sigma, \nu, \theta)
+$$
+
+where
+
+$$
+\begin{aligned}
+& \\
+& =\frac{1}{t} \ln \left(1-\theta \nu-\sigma^{2} \nu / 2\right)
+\end{aligned}
+$$
+
+除了正態分布的波動率參數 $\sigma$ 外，該模型還包含下列控制參數：\\
+(i) 峰度參數 (kurtosis) $\nu$，用於控制「厚尾性」（kurtosis），即報酬分布相較於常態分布在左右兩側尾部機率的對稱性增強；\\
+(ii) 偏度參數 (skewness) $\theta$，用於允許報酬密度的左右尾部出現不對稱（skewness）。
+
+該模型另一個吸引人的特點是，它將對數常態分布與 B-S-M 公式作為參數化的特殊情形（當 $\nu=0$ 且 $\theta=0$）所包含其中。
+
+\subsection{方差伽馬過程的採樣 (Sampling VG Process)}
+\begin{itemize}
+	\item 假設將時間區間劃分為 $N$ 個等距子區間，長度為 $h$，其中 $h = \frac{T}{N}$
+	\item 從一個具有期望為 $h$, 方差為 $\nu h$ 的伽瑪分布中取樣
+	\item 一個伽瑪過程，其形狀參數為 $\alpha$, 尺度參數為 $\beta$：
+\end{itemize}
+
+$$
+f(x, \alpha, \beta)=\frac{1}{\Gamma(\alpha) \beta^{\alpha}} x^{\alpha-1} e^{\frac{\gamma}{\gamma} e^{\partial(x)}}
+$$
+
+\begin{itemize}
+  \item 它的期望和方差分別為:
+\end{itemize}
+
+$$
+\begin{aligned}
+\mu^{\mathrm{omp}} & =\alpha \beta \\
+\sigma^{2} & =\alpha \beta^{2}
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 以方差伽馬過程為例:
+\end{itemize}
+
+$$
+\begin{aligned}
+\alpha \beta & =h \\
+\alpha \beta^{2} & =\nu h
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 則有:
+\end{itemize}
+
+$$
+\begin{aligned}
+\alpha & =\frac{h}{\nu} \\
+\beta & =\nu
+\end{aligned}
+$$
+
+因此對於方差伽馬過程的一個採樣, $X(h, \sigma, \nu, \theta)$, 則為:
+
+$$
+\left.\theta g\left(\frac{h}{\nu}, \nu\right) \not \partial^{g^{e^{2}}}\right) \pi \sqrt{g\left(\frac{h}{\nu}, \nu\right) z}
+$$
+
+此處 $z \sim \mathcal{N}(0,1)$ 且 $g\left(\frac{h}{\nu}, \nu\right) \sim \operatorname{gamrand}\left(\frac{h}{\nu}, \nu\right)$
+
+\subsection{算法 (Algorithm)}
+\begin{itemize}
+  \item 一個模擬方差伽馬過程的算法為:
+\end{itemize}
+
+$$
+\begin{aligned}
+\text { for } i= & 1, \ldots, N \\
+z & \sim \mathcal{N}(0,1) \\
+g & \sim \operatorname{gamrand}(h / \nu, \nu) \\
+X_{i} & =\theta g+\sigma \sqrt{g} z \\
+\text { end } &
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 對於股票價格過程的對數有:
+\end{itemize}
+
+$$
+\text { for } i=1, \ldots \text { of } N
+$$
+
+$$
+\log S_{i}^{e s}=\log S_{i-1}+(r-q) h+\omega h+X_{i}
+$$
+
+end
+
+\begin{itemize}
+  \item 此處 $\omega=\frac{1}{\nu} \log \left(1-\theta \nu-\sigma^{2} \nu / 2\right)$
+  \item 注意到 $X(t ; \sigma, \nu=0, \theta=0)=\sigma W_{t} \& \omega=-\frac{1}{2} \sigma^{2}$
+\end{itemize}
+
+\subsection{比較 GBM 和 VG (GBM vs VG)}
+\includegraphics[max width=\textwidth, center]{GBM}
+
+\subsection{含有隨機到達的方差伽馬模型 (Variance Gamma with Stochastic Arrival (VGSA))}
+\begin{itemize}
+  \item 定義 CIR 過程 $y(t)$ 為對 SDE 的一個微分方程解. 
+\end{itemize}
+
+$$
+d y_{t}=\kappa\left(\eta-y_{t}\right) d t+\lambda \sqrt{y_{t}} d W_{t}
+$$
+
+\begin{itemize}
+	\item $\eta$ 是時間變化的長期平均速率
+	\item $\kappa$ 是平均回歸速率
+	\item $\lambda$ 是時間變化的波動率
+	\item 過程 $y(t)$ 是瞬時時間變化率，因此總的時間變化由 $Y(t)$ 給出，其中
+\end{itemize}
+
+$$
+Y(t)=\int_{0}^{t} y(u) d u
+$$
+
+是對於 $Y(t)$ 的特徵函數, 性質如下:
+
+$$
+\begin{aligned}
+\mathbb{E}\left(e^{i u Y(t)}\right) & =\phi(u, t, y(0), \kappa, \eta, \lambda) \\
+& =A(t, u) e^{B(t, u) y(0)}
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 此處有:
+\end{itemize}
+
+$$
+\begin{aligned}
+& A(t, u)=\frac{\exp \left(\frac{\kappa^{2} \eta t t}{\| \lambda^{2}}\right)}{\left(\cosh (\gamma t / 2)+\frac{\kappa}{\gamma} \sinh (\gamma t / 2)\right)^{2 \kappa \eta / \lambda^{2}}}
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 以及:
+\end{itemize}
+
+$$
+\gamma=\sqrt{\kappa^{2}-2 \lambda^{2} i u}
+$$
+
+\begin{itemize}
+  \item VGSA 過程被定義為:
+\end{itemize}
+
+$$
+\begin{aligned}
+Z(t) & =X_{V G}(Y(t) ; \sigma, \nu, \theta) \\
+& =\theta \gamma(Y(t) ; 1, \nu)+\sigma W(\gamma(Y(t) ; 1, \nu))
+\end{aligned}
+$$
+
+\begin{itemize}
+\item $\sigma, \nu, \theta, \kappa, \eta$ 和 $\lambda$ 是定義改過程的6個參數
+\item  特徵函數由以下公式給出:
+\end{itemize}
+
+$$
+\mathbb{E}\left(e^{i u Z_{V G S A}(t)}\right)^{a^{\text {SS }} e^{S^{e}}}=\phi\left(-i \Psi_{V G}(u), t, \frac{1}{\nu}, \kappa, \eta, \lambda\right)
+$$
+
+\begin{itemize}
+\item 其中 ${ }_{0}$ 為 $Y(t)$ 的特徵函數，而 $\Psi_{VG}$ 則是方差伽瑪過程在單位時間的對數特徵函數，即：
+\end{itemize}
+
+$$
+\Psi_{V G}(u)=-\frac{1}{\nu} \log \left(1-i u \theta \nu+\sigma^{2} \nu u^{2} / 2\right)
+$$
+
+我們以隨機變量定義時間 $t$ 時的股票價格過程：
+
+$$
+S(t)=S(0) \frac{e^{(r-q) t+Z(t)}}{\mathbb{E}\left[e^{Z(t)}\right]}
+$$
+
+注意到:
+$$
+\mathbb{E}\left[e^{Z(t)}\right]=\phi\left(-j \Psi_{V G}(-i), t, \frac{1}{\nu}, \kappa, \eta, \lambda\right)
+$$
+
+在方差伽瑪（VG）模型中，這等價於 $e^{-\omega t}$。因此，時間 $t$ 時股票價格對數的特徵函數為：
+
+
+$$\mathbb{E}\left[e^{i u \log S_{t}}\right]=\exp \left(i u\left(\log S_{0}+(r-q) t\right)\right) \times \frac{\phi\left(-i \Psi_{V G}(u), t, \frac{1}{\nu}, \kappa, \eta, \lambda\right)}{\phi\left(-i \Psi_{V G}(-i), t, \frac{1}{\nu}, \kappa, \eta, \lambda\right)^{i u}}$$
+
+\subsection{VGSA 的 特徵方程 (Characteristic function of VGSA)}
+\begin{itemize}
+\item 為了模擬 VGSA 過程，如同先前一樣，我們假設將時間區間劃分為 $N$ 個等距子區間，每個區間長度為 $h$，其中 $h = \frac{T_e}{N}$。我們希望在每個時間子區間 $h$ 上模擬 VGSA 過程，在時間點 $t + h$ 進行模擬  
+\item 我們可以寫為： （有點問題--
+
+\end{itemize}
+
+$$
+\begin{aligned}
+\Delta Z_{t} & =Z(t)-Z\left(t_{n} h\right) \\
+& =\theta \gamma(Y(t t) ; 1, \nu)+\sigma W(\gamma(Y(t) ; 1, \nu)) \\
+& -\quad(\theta \gamma(Y(t-h) ; 1, \nu)+\sigma W(\gamma(Y(t-h) ; 1, \nu))) \\
+& +\sigma \sqrt{\gamma(Y(t) ; 1, \nu)-\gamma(Y(t-h) ; 1, \nu)} z
+\end{aligned}
+$$
+
+其中 $z$ 為服從 $\mathcal{N}(0,1)$ 的標準常態分布隨機變量。
+
+具有期望值 $Y(t)$ 和變異數 $Y(t)\nu$ 的 Gamma 過程 $\gamma(Y(t); 1, \nu)$，其形狀參數（shape）與尺度參數（scale）如下：
+
+
+$$
+\begin{aligned}
+\alpha & =\frac{Y(t)}{\nu} \\
+\beta & =\nu
+\end{aligned}
+$$
+
+這暗示了:
+
+$\gamma(Y(t) ; 1, \nu)-\gamma(Y(t-h) ; 1, \nu)) \circ n \stackrel{C o m p}{=} \operatorname{gamma}\left(\frac{Y(t)}{\nu}, \nu\right)-\operatorname{gamma}\left(\frac{Y(t-h)}{\nu}, \nu\right)$
+
+$$
+=\operatorname{gamma}\left(\frac{Y(t)-Y(t-h)}{\nu}, \nu\right)
+$$
+
+根據伽馬過程的加法性質，因此\\
+
+$\Delta Z_{t}=\theta$ gamma $\left(\frac{Y(t)-Y(t-h)}{\nu}, \nu\right)+\sigma \sqrt{\operatorname{gamma}\left(\frac{Y(t)-Y(t-h)}{\nu}, \nu\right)} z$\\
+此處有 $Y(t)-Y(t-h)=\int_{t-h}^{t} y(u) d u$
+
+\begin{itemize}
+\item 在模擬中，首先對 CIR 過程進行離散化  
+\item 對 CIR 過程使用米爾施泰因離散化方法可得：
+
+\end{itemize}
+
+$$
+y_{j}=y_{j-1}+\kappa\left(\eta-y_{j-1}\right) h+\lambda \sqrt{y_{j-1}} \sqrt{h} z^{2}+\frac{\lambda^{2}}{4} h\left(z^{2}-1\right)
+$$
+
+\begin{itemize}
+\item 其中 $y_{j}$ 是 $y\left(t_{j}\right)$ 的一個近似值，且 $t_{j} = jh$，對所有 $j = 0, \ldots, N$，並且 $z \sim \mathcal{N}(0,1)$  
+\item 對於區間 $\left(t_{j-\mathbb{1}}, t_{j}^{c}\right)$，新的時鐘（clock）由以下積分給出：
+ 
+ 
+ 以上可能有問題
+ 
+\end{itemize}
+
+$$
+\int_{t_{j-1}}^{t_{j}} y(u) d u
+$$
+
+$\sigma^{\circ}$ 通過梯形方法我們可得:
+
+$$
+\int_{t_{j-1}}^{t_{j}} y(u) d u=\frac{h}{2}\left(y_{j-1}+y_{j}\right)
+$$
+
+\subsection{模擬 VGSA (Simulating VGSA)}
+為了模擬 VGSA, 我們可以
+$$
+\begin{aligned}
+& \text { for } j=1, \ldots, N \\
+& z \sim \mathcal{N}(0,1) \\
+& y_{j}=y_{j-1}+\kappa\left(\eta-y_{j-1}\right) h+\lambda \sqrt{y_{j-1}} \sqrt{h} z+\frac{\lambda^{2}}{4} h\left(z^{2}-1\right) \\
+& \hat{t}_{j}=\frac{h}{2}\left(y_{j}+y_{j-1}\right) \\
+& g=\operatorname{gamrand}\left(\frac{\hat{t}_{j}}{\nu}, v\right) \\
+& z \sim \mathcal{N}(0,1) \\
+& X_{j}=\theta g+ \sigma \sqrt{g} z
+\end{aligned}
+$$
+
+end\\
+
+此處 $X_{j}$ 是對於 $\Delta Z_{t_{j}}$ 的模擬.
+
+\textbf{另一種模擬方法}
+
+
+另一種模擬 VGSA 的方法是:
+
+\begin{align*}
+	\text{for } j = 1, \dots, N \\
+	&\quad z \sim \mathcal{N}(0, 1) \\
+	&\quad y_j = y_{j-1} + \kappa(\eta - y_{j-1}) h + \lambda \sqrt{y_{j-1}} \sqrt{h} z + \frac{\lambda^2}{4} h (z^2 - 1) \\
+	&\quad \hat{t}_j = \frac{h}{2} (y_j + y_{j-1}) \\
+	&\quad \hat{\sigma} = \sigma \sqrt{\hat{t}_j} \\
+	&\quad \hat{\nu} = \frac{\nu}{\hat{t}_j} \\
+	&\quad \hat{\theta} = \theta \hat{t}_j \\
+	&\quad g \sim \text{gamrand} \left( \frac{1}{\hat{\nu}}, \hat{\nu} \right) \\
+	&\quad \tilde{z} \sim \mathcal{N}(0, 1) \\
+	&\quad X_j = \hat{\theta} g + \hat{\sigma} \sqrt{g} \tilde{z} \\
+	\text{end}
+\end{align*}
+
+
+對於股票價格的對數, 我們有:
+
+
+\begin{align*}
+	\log S_t &= \log S_0 + (r - q)t + Z(t) - \log\left( \mathbb{E}(e^{Z(t)}) \right) \\
+	\log S_{t - h} &= \log S_0 + (r - q)(t - h) + Z(t - h) - \log\left( \mathbb{E}(e^{Z(t - h)}) \right)
+\end{align*}
+
+減去:
+
+\begin{align*}
+	\log S_t &= \log S_{t-h} + (r - q)h + Z(t) - Z(t - h) + \log\left( \mathbb{E}(e^{Z(t - h)}) \right) - \log\left( \mathbb{E}(e^{Z(t)}) \right) \\
+	&= \log S_{t-h} + (r - q)h + \Delta Z_t + \log\left( \mathbb{E}(e^{Z(t - h)}) \right) - \log\left( \mathbb{E}(e^{Z(t)}) \right) \\
+	&= \log S_{t-h} + (r - q)h + \Delta Z_t + \Delta \omega_t
+\end{align*}
+
+因此:
+
+\begin{align*}
+	\text{for } j = 1, \dots, N \\
+	\Delta \omega_j &= \log\left( \phi\left(-i\Psi_{VG}(-i), (j-1)h, \frac{1}{\nu}, \kappa, \eta, \lambda \right) \right) \\
+	&\quad - \log\left( \phi\left(-i\Psi_{VG}(-i), jh, \frac{1}{\nu}, \kappa, \eta, \lambda \right) \right) \\
+	\log S_j &= \log S_{j-1} + (r - q)h + \widehat{\Delta \omega}_j + X_j \\
+	\text{end}
+\end{align*}
+
+
+
+\end{document}

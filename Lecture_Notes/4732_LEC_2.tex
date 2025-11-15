@@ -1,0 +1,562 @@
+\documentclass[letterpaper]{article} 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage[dvipsnames]{xcolor}
+\colorlet{LightRubineRed}{RubineRed!70}
+\colorlet{Mycolor1}{green!10!orange}
+\definecolor{Mycolor2}{HTML}{00F9DE}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{lipsum}
+\usepackage{algpseudocode}
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage[export]{adjustbox}
+\graphicspath{ {./images/} }
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{ctex}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{tcolorbox}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{pifont} 
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref} 
+\newcommand{\cmark}{\textcolor{green!60!black}{\ding{51}}} % ✓
+\newcommand{\xmark}{\textcolor{red}{\ding{55}}}    
+\usepackage{xcolor} % For custom colors
+\lstset{
+	language=Python,                % Choose the language (e.g., Python, C, R)
+	basicstyle=\ttfamily\small, % Font size and type
+	keywordstyle=\color{blue},  % Keywords color
+	commentstyle=\color{gray},  % Comments color
+	stringstyle=\color{red},    % String color
+	numbers=left,               % Line numbers
+	numberstyle=\tiny\color{gray}, % Line number style
+	stepnumber=1,               % Numbering step
+	breaklines=true,            % Auto line break
+	backgroundcolor=\color{black!5}, % Light gray background
+	frame=single,               % Frame around the code
+}
+\usepackage{float}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+	\usepackage[]{amssymb} %gives us the character \varnothing
+	
+	\title{Lecture 2, IEOR 4732\\
+		\small{Fourier Transform and COS Method\\傅立葉變換和餘弦方法
+	}}
+	\author{Zongyi Liu}
+	\date{Thu, Mar 27, 2025}
+	\begin{document}
+		\maketitle
+		\tableofcontents
+
+\section{日程 (Agenda)}
+\begin{itemize}
+  \item FFT 的回顧
+  \item 分部FFT (Fractional FFT (FrFFT))
+  \item COS方法 (COS method)
+\end{itemize}
+
+\section{快速傅立葉變換 (Fourier Transform)}
+\subsection{實施 (Implementation)}
+已知 $\Phi(\nu)$, 選擇 $\eta, N=2^{n}$, 和 $\beta$, 計算 $\lambda=\frac{2 \pi}{N / \eta}$, $\nu_{j}=(j-1) \eta$, 和集合 $\alpha>0$. 建立向量 $\mathbf{x}$.
+
+\[
+\mathbf{x} =
+\begin{pmatrix}
+	x_1 \\
+	x_2 \\
+	\vdots \\
+	x_N
+\end{pmatrix}
+=
+\begin{pmatrix}
+	\frac{\eta}{2} \frac{e^{-rT}}{(\alpha + i \nu_1)(\alpha + i \nu_1 + 1)} e^{-i \beta \nu_1} \Phi\left( \nu_1 - (\alpha + 1)i \right) \\
+	\frac{\eta}{(\alpha + i \nu_2)(\alpha + i \nu_2 + 1)} e^{-rT} e^{-i \beta \nu_2} \Phi\left( \nu_2 - (\alpha + 1)i \right) \\
+	\vdots \\
+	\frac{\eta}{(\alpha + i \nu_N)(\alpha + i \nu_N + 1)} e^{-rT} e^{-i \beta \nu_N} \Phi\left( \nu_N - (\alpha + 1)i \right)
+\end{pmatrix}
+\]
+
+$$
+\mathbf{y}=\text{fft}(\mathbf{x})
+$$
+
+在strike $k_{m}$ for $m=1, \ldots, N$時候的贖回價格 (call prices):
+
+\[
+\begin{pmatrix}
+	C_T(k_1) \\
+	C_T(k_2) \\
+	\vdots \\
+	C_T(k_N)
+\end{pmatrix}
+=
+\begin{pmatrix}
+	\frac{e^{-\alpha k_1}}{\pi} Re(y_1) \\
+	\frac{e^{-\alpha k_2}}{\pi} Re(y_2) \\
+	\vdots \\
+	\frac{e^{-\alpha k_N}}{\pi} Re(y_N)
+\end{pmatrix}
+\]
+
+
+此時 $k_{m}=\beta+(m-1) \lambda$
+
+\subsection{$\beta$的選擇 (Choice of $\beta$)}
+$
+k_{m}=\beta+(m-1) \lambda \text { for } m=1, \ldots, N$
+
+\begin{itemize}
+  \item 兩個常見的選擇:
+  \begin{itemize}
+  \item 對應平值 (at-the-money) 的中間範圍 (middle of the range): 集合 $\beta=\ln \left(S_{0}\right)-\frac{N}{2} \lambda$.
+  \item 第一個贖回價格 (call) 對應於某一個特定的 strike $K$: set $\beta=\ln (K)$.
+\end{itemize}
+  \item 此處步驟規模 (stepsize) $\lambda$ 可能會引起插值誤差 (interpolation error).
+\end{itemize}
+
+\subsection{限定域 (Constraint)}
+\begin{itemize}
+  \item 對於 $\lambda$ 和 $\eta$ 有以下的關係:
+\end{itemize}
+
+$$
+\lambda \eta=\frac{2 \pi}{N}
+$$
+
+\begin{itemize}
+  \item 對於 $N=2^{12}=4096$ 和 $\eta=0.25$, 我們有:
+\end{itemize}
+
+$$
+\lambda= \frac{2 \pi }{N / \eta}=0.0061
+$$
+
+也就是說，計算得到的選擇權中約有 $67\left(2 \times \frac{20\%}{0.61\%} + 1 \approx 67\right)$ 檔，會落在 $\pm 20\%$ 的對數履約價區間內. 
+
+
+
+\begin{itemize}
+	\item 對於 $N=2^{8}=256$ 和 $\eta=0.25$, 我們有:
+\end{itemize}
+$$
+\lambda=\frac{2 \pi}{N / \eta}=0.0981
+$$
+
+\section{分部快速傅立葉變換 (Fractional FFT)}
+\begin{itemize}
+  \item 目的是消除 $\lambda$ 和 $\eta$ 之間的依賴性.
+  \item Fractional FFT 可以完成此目標.
+  \item Fractional FFT procedure 得以計算一下的格式, 對於任何 $\gamma$ 值.
+\end{itemize}
+
+$$
+\sum_{\gamma=1}^{N} e^{e i 2 \pi \gamma(j-1)(m-1)} x (j)
+$$
+
+
+\begin{itemize}
+  \item 一個特殊例子: $\gamma=\frac{1}{N}$
+\end{itemize}
+
+\subsection{建立 (Formation)}
+定義 $N$ 長度的複數序列 (complex sequence) $x$ 為:
+
+\[
+G_m(x, \gamma) = \sum_{j=1}^{N} e^{-i 2\pi \gamma (j - 1)(m - 1)} x(j)
+\]
+
+$\gamma$ 是任一複有理數; 其總和可以通過三個 $2 N$-point FFT steps 執行. 
+
+對於一個在向量 $x(j)$ 上的 $N$-point fractional FFT, 我們定義這個 $2 N$ 長度的序列為:
+
+\[
+\begin{aligned}
+	y_j &= x_j e^{-i \pi (j - 1)^2 \gamma} \quad &&1 \leq j \leq N \\
+	y_j &= 0 \quad &&N < j \leq 2N \\
+	z_j &= e^{i \pi (j - 1)^2 \gamma} \quad &&1 \leq j \leq N \\
+	z_j &= e^{i \pi (2N - j)^2 \gamma} \quad &&N < j \leq 2N \\
+\end{aligned}
+\]
+\[
+\text{此處} \quad \gamma = \frac{\lambda \eta}{2\pi}.
+\]
+
+因而有:
+
+$$
+G_{m}(x, \gamma)=\left(e^{-i \pi(m-1)^{2} }\gamma\right) \odot \mathrm{D}_{m}^{-1}(\mathrm{D}(\mathbf{y}) \odot \mathrm{D}(\mathbf{z})) \quad 1 \leq m \leq N
+$$
+
+$\odot$: 分別對元素進行的向量乘法 (element componentwise vector multiplication)
+
+$$
+\mathrm{D}(\xi)=\left(\begin{array}{c}
+\mathrm{D}_{1}(\xi) \\
+\left.\mathrm{D}_{2}(\xi)\right) \\
+\vdots\\
+\mathrm{D}_{2 N}(\xi)
+\end{array}\right)
+$$
+
+以及
+
+\[
+\eta_j = \mathcal{D}_j(\xi) = \sum_{m=1}^{2N} \exp\left(-i \frac{2\pi}{2N}(j - 1)(m - 1)\right)\, \xi(m), \quad 1 \leq j \leq 2N
+\]
+
+和
+
+\[
+\xi_m = \mathcal{D}_m^{-1}(\eta) = \frac{1}{2N} \sum_{j=1}^{2N} \exp\left(i \frac{2\pi}{2N}(j - 1)(m - 1)\right)\, \eta(j), \quad 1 \leq m \leq 2N
+\]
+
+\begin{itemize}
+	\item 最後進行逆向離散傅立葉變換後所得到的 $N$ 個結果將被捨棄.
+	\item 指數項與實際被積函數無關，因此可以預先計算並儲存.
+\end{itemize}
+
+
+\subsection{執行 (Implementation)}
+已知標的過程對數 $X_t$ 的特徵函數為 $\Phi(\nu)$，我們獨立選取參數 $\eta$ 與 $\lambda$，並設 $N = 2^{n}$。接著計算：$\gamma = \frac{\eta \lambda}{2\pi}, \quad \nu_j = (j - 1)\eta$
+並設定衰減因子 $\alpha$, 最後構造向量 $\mathbf{x}$. 
+
+
+\[
+\mathbf{x} =
+\begin{pmatrix}
+	x_1 \\
+	x_2 \\
+	\vdots \\
+	x_N
+\end{pmatrix}
+=
+\begin{pmatrix}
+	\frac{\eta}{2} \frac{C}{(\alpha + i\nu_1)(\alpha + i\nu_1 + 1)} e^{-i \beta \nu_1} \Phi(\nu_1 - (\alpha + 1)i) \\
+	\frac{\eta C}{(\alpha + i\nu_2)(\alpha + i\nu_2 + 1)} e^{-i \beta \nu_2} \Phi(\nu_2 - (\alpha + 1)i) \\
+	\vdots \\
+	\frac{\eta C}{(\alpha + i\nu_N)(\alpha + i\nu_N + 1)} e^{-i \beta \nu_N} \Phi(\nu_N - (\alpha + 1)i)
+\end{pmatrix}
+\]
+
+構造向量 $\mathbf{y}$ 與 $\mathbf{z}$：
+
+
+\[
+\mathbf{y} =
+\begin{pmatrix}
+	y_1 \\
+	y_2 \\
+	\vdots \\
+	y_N \\
+	y_{N+1} \\
+	y_{N+2} \\
+	\vdots \\
+	y_{2N}
+\end{pmatrix}
+=
+\begin{pmatrix}
+	x_1 \\
+	\exp(-i \pi \gamma) x_2 \\
+	\vdots \\
+	\exp(-i \pi \gamma (N-1)^2) x_N \\
+	0 \\
+	0 \\
+	\vdots \\
+	0
+\end{pmatrix}
+\]
+
+\[
+\mathbf{z} =
+\begin{pmatrix}
+	z_1 \\
+	z_2 \\
+	\vdots \\
+	z_N \\
+	z_{N+1} \\
+	z_{N+2} \\
+	\vdots \\
+	z_{2N}
+\end{pmatrix}
+=
+\begin{pmatrix}
+	1 \\
+	\exp(i \gamma \pi) \\
+	\vdots \\
+	\exp(i \gamma \pi (N-1)^2) \\
+	\exp(i \gamma \pi (N-1)^2) \\
+	\exp(i \gamma \pi (N-2)^2) \\
+	\vdots \\
+	1
+\end{pmatrix}
+\]
+
+向量 $\mathbf{y}$ 與 $\mathbf{z}$ 作為 FFT 的輸入，其輸出分別為相同大小的向量 $\widehat{\mathbf{y}}$ 和 $\widehat{\mathbf{z}}$。  
+接著，對 $\widehat{\mathbf{y}}$ 與 $\widehat{\mathbf{z}}$ 進行元素對應相乘，形成向量 $\boldsymbol{\xi}$：$
+\boldsymbol{\xi} = \widehat{\mathbf{y}} \odot \widehat{\mathbf{z}}$.
+
+$$
+\xi=\left(\begin{array}{c}
+\xi_{1} \\
+\xi_{2} \\
+c_{2} \\
+\vdots \\
+\xi_{2 N}
+\end{array}\right)=\left(\begin{array}{c}
+\widehat{y}_{1} \widehat{z}_{1} \\
+\widehat{y}_{2} \widehat{z}_{2} \\
+\vdots \\
+\widehat{y}_{2 N} \widehat{z}_{2 N}
+\end{array}\right)
+$$
+
+向量 $\boldsymbol{\xi}$ 作為 IFFT（反快速傅立葉轉換）的輸入，其輸出為向量 $\widehat{\boldsymbol{\xi}}$。  
+根據向量 $\widehat{\boldsymbol{\xi}}$，執行價格為 $k_m$ 的買入權價格，對於 $m = 1, \ldots, N$，可表示為：
+
+
+\[
+\begin{pmatrix}
+	C_T(k_1) \\
+	C_T(k_2) \\
+	\vdots \\
+	C_T(k_N)
+\end{pmatrix}
+=
+\begin{pmatrix}
+	\frac{e^{-\alpha \beta \lambda}}{\pi} \, \mathrm{Re}\left( \hat{\xi}_1 \right) \\
+	\frac{e^{-\alpha (\beta + 1) \lambda}}{\pi} \, \mathrm{Re}\left( \exp(-i \pi \gamma)\hat{\xi}_2 \right) \\
+	\vdots \\
+	\frac{e^{-\alpha (\beta + (N - 1)) \lambda}}{\pi} \, \mathrm{Re}\left( \exp(-i \pi \gamma (N - 1)^2)\hat{\xi}_N \right)
+\end{pmatrix}
+\]
+
+此處如前所述 $\operatorname{Re}(z)$ 是 $z$ 的實數部分. 
+
+\subsection{兩者的比較 (FrFFT vs. FFT)}
+關於傅立葉變換和分數階傅立葉變換的的區別.
+\begin{itemize}
+	\item 請注意，向量 $\widehat{\boldsymbol{\xi}}$ 的最後 $N$ 個元素從未被使用，會被捨棄。
+	\item 考慮到 $\lambda$ 與 $\eta$ 是獨立的，我們可以選擇一個合適的 $\lambda$，使其在 $\mathrm{tn}\, X_0$ 周圍涵蓋期望的價內程度（money-ness），例如：若欲涵蓋 $25\%$ 的價內程度，則可取 $\lambda = \frac{2(0.25)}{N}$
+	\item 此外通常所選的 $N = 2^{n}$ 遠小於傳統快速傅立葉方法中使用的值（例如這裡使用 $2^{7}$，而非 $2^{14}$）
+\end{itemize}
+
+Q: 試問：FFT 與 FrFFT（分數傅立葉變換）有何異同？
+
+
+\section{餘弦方法 (Cosine Method)}
+\subsection{餘弦級數擴展 (Cosine Series Expansion)}
+對於在 $[0, \pi]$ 上的函數 $f(\theta)$ 的傅立葉級數擴展為:
+
+$$
+\begin{aligned}
+f(\theta) & =\frac{1}{2} A_{0}+\sum_{k=1}^{\infty} A_{k} \cos \left(k_{k}\theta\right) \\
+& =\sum_{\substack{i n}}^{\infty}{ }_{k=0}^{\infty} A_{k} \cos (k \theta)
+\end{aligned}
+$$
+
+它有傅立葉餘弦係數:
+
+$$
+A_{k}=\frac{2}{\pi} \int_{0}^{\pi} f(\theta) \cos (k \theta) d \theta
+$$
+
+此處的 $\bar{\sum}$ 求和公式的第一個項被1/2加權了. 
+
+對於在 $[a, b]$ 上的函數, 將在 $a$ to 0 和 $b$ to $\pi$ 上映射的變量做如下變換:
+
+
+$$
+\theta=\frac{\pi-0}{b-a}(x-a)=\frac{x-a}{b-a} \pi
+$$
+
+$x$ 關於 $\theta$
+
+$$
+x=\frac{b-a^{}}{\pi} \theta+a
+$$
+
+替代:
+
+$$
+f(x)={\sum}_{k=0}^{\infty} A_{k} \cos \left(k \frac{x-a}{b-a} \pi\right)
+$$
+
+以及
+
+$$
+A_{k}=\frac{2}{b-a} \int_{a}^{b} f(x) \cos \left(k \frac{x-a}{b-a} \pi\right) d x
+$$
+
+\subsection{和特徵函數的關係 (Linking it to CF)}
+$$
+\mathbb{E}\left(e^{i \nu x}\right)=\phi(\nu)=\int_{-\infty}^{\infty} e^{i \nu x} f(x) d x
+$$
+
+在 \( \nu = \frac{k\pi}{b - a} \) 的位置上對其進行計算. 
+
+\[
+\phi\left( \frac{k\pi}{b - a} \right) = \int_{-\infty}^{\infty} e^{i \left( \frac{k\pi}{b - a} \right)x} f(x)\,dx
+\]
+
+\[
+\hat{\phi}\left( \frac{k\pi}{b - a} \right) = \int_{a}^{b} e^{i \left( \frac{k\pi}{b - a} \right)x} f(x)\,dx
+\]
+
+將其乘以 \( e^{-i \frac{k\pi a}{b - a}} \).
+
+\[
+\hat{\phi}\left( \frac{k\pi}{b - a} \right) e^{-i \frac{k\pi a}{b - a}} 
+= \int_{a}^{b} e^{i k\pi \left( \frac{x - a}{b - a} \right)} f(x)\,dx
+\]
+
+\[
+= \int_{a}^{b} \left( \cos\left(k\pi \frac{x - a}{b - a}\right) + i \sin\left(k\pi \frac{x - a}{b - a}\right) \right) f(x)\,dx
+\]
+
+
+因此: 
+\\
+$\operatorname{Re}\left\{\hat{\phi}\left(\frac{k \pi}{b-a}\right) \exp \left(-i \frac{k a \pi}{b-a}\right)\right\} = \int_{a}^{b} \cos \left(k \pi\left(\frac{x-a}{b-a}\right)\right) f(x) \, dx$\\
+如果我們假設區間 $[a, b]$ 滿足以下條件：
+
+
+$$
+\widehat{\phi}(\nu)=\int_{a}^{b}  e^{ i v x} f(x) d x \approx \int_{-\infty}^{+\infty} e^{i \nu x} f(x) d x=\phi(\nu)
+$$
+
+$$
+A_{k}=\frac{2}{b-a} \operatorname{Re}\left\{\hat{\phi}\left(\frac{k \pi}{b-a}\right) \exp \left(-i \frac{k a \pi}{b-a}\right) {\}}\right.
+$$
+
+有 $A_{k} \approx F_{k}$, 此處:
+
+$$
+\begin{gathered}
+F_{k}=\frac{2}{b-a} \operatorname{Re}\left\{\phi\left(\frac{k \pi}{b-a}\right) \exp \left(-i \frac{k a \pi}{b-a}\right)\right\} \\
+\hat{f}(x)=\sum_{k=0}^{\infty} F_{k} \cos \left(k \frac{x-a}{b-a} \pi\right)
+\end{gathered}
+$$
+
+將其進一步截斷:
+
+$$
+\tilde{f}(x)=\bar{\sum}_{k=0}^{N-1} F_{k} \cos \left(k \frac{x-a}{b-a} \pi\right)
+$$
+
+原文有個 long bar, 在 sum 符號上, 不知道是幹嘛的.
+
+\subsection{在期權定價中的餘弦方法 (COS Option Pricing)}
+\begin{itemize}
+	\item 設 $x$ 為時間 $t$ 的建模變數，即 $\ln X_{t}$
+	\item 設 $y$ 為時間 $T$ 的建模變數，即 $\ln X_{T}$
+	\item 設 $f(y \mid x)$ 為定價測度下的條件機率密度函數
+	\item 設 $v(x, t)$ 為時間 $t$ 的期權價值
+	\item 設 $v(y, T)$ 為時間 $T$ 的期權價值，即到期時的支付函數
+\end{itemize}
+
+則時間 $t$ 的期權價值可寫為：
+
+
+$$
+v(x, t)=C \int_{a}^{b} v(y, T) f(y \mid x) d y
+$$
+
+對於 $C$ 的一個合適的值. 
+
+$$
+\begin{aligned}
+& v(x, t)=C \int_{a}^{b } v(y, T) \bar{\sum}_{k=0}^{\infty} A_{k} \cos \left(k \frac{y-a}{b-a} \pi\right) d y \\
+& =C \sum_{k=0}^{\infty} A_{k}\left(\int_{a}^{b} v(y, T) \cos \left(k \frac{y-a}{b-a} \pi\right) d y\right)
+\end{aligned}
+$$
+
+定義有:
+
+$$
+\begin{gathered}
+V_{k}=\frac{2}{b-a} \int_{a}^{b} v(y, T) \cos \left(k \pi \frac{y-a}{b-a}\right) d y \\
+v(x, t)=\frac{b-a}{2} C \sum_{k=0}^{\infty} A_{k} V_{k}
+\end{gathered}
+$$
+
+另一個近似是:
+
+\[
+\approx C \sum_{k=0}^{N-1} \mathrm{Re} \left\{ 
+\phi\left( \frac{k\pi}{b - a} ; x \right) 
+\exp\left( -i k\pi \frac{a}{b - a} \right)
+\right\} V_k
+\]
+
+\subsection{香草期權價格 (Vanilla Option Price)}
+\begin{itemize}
+	\item $X_{t}$ 是標的資產在當前時間的價格
+	\item $X_{T}$ 是標的資產在到期時間 $T$ 的價格
+	\item $K$ 是期權的履約價 (執行價格)
+	\item $x = \ln \left(X_{t} / K\right)$ 為當前對數價內程度
+	\item $y = \ln \left(X_{T} / K\right)$ 為到期對數價內程度
+\end{itemize}
+
+香草歐式期權可以被描述為:
+
+$$
+v(y, T)=\left[\alpha K\left(e^{y}-1\right)\right]^{+}
+$$
+
+其中對於買入權取 $\alpha = 1$，對於賣出權取 $\alpha = -1$。
+
+對於標準歐式期權，$V_k$ 可解析表示。定義如下：
+
+
+$$
+\begin{aligned}
+\chi_{k}(c, d) & =\int_{c}^{d} e^{y} \cos \left(k \pi \frac{y-a}{b-a}\right) d y \\
+\varphi_{k}(c, d) & =\int_{c}^{d} \cos \left(k \pi \frac{y-a}{b-a}\right) d y
+\end{aligned}
+$$
+
+對於香草期權的兩種狀態, 有:
+
+\[
+V_k^{\text{call}} = \frac{2}{b - a} \int_a^b K(e^y - 1)^+ \cos\left( k\pi \frac{y - a}{b - a} \right) dy
+\]
+\[
+\quad\quad\quad = \frac{2}{b - a} K \left( \chi_k(0, b) - \varphi_k(0, b) \right)
+\]
+
+\[
+V_k^{\text{put}} = \frac{2}{b - a} \int_a^b K(1 - e^y)^+ \cos\left( k\pi \frac{y - a}{b - a} \right) dy
+\]
+\[
+\quad\quad\quad = \frac{2}{b - a} K \left( -\chi_k(a, 0) + \varphi_k(a, 0) \right)
+\]
+
+\subsection{優勢和劣勢 (Pros and Cons)}
+
+餘弦方法的劣勢是不易找出截斷區間 $\left[a, b\right]$, 優勢是它對於轉換不同的收益的靈活性. 
+
+\end{document}
