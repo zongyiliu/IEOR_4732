@@ -1,0 +1,972 @@
+\documentclass[letterpaper]{article} 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{ctex} 
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage[dvipsnames]{xcolor}
+\colorlet{LightRubineRed}{RubineRed!70}
+\colorlet{Mycolor1}{green!10!orange}
+\definecolor{Mycolor2}{HTML}{00F9DE}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{lipsum}
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage[export]{adjustbox}
+\graphicspath{ {./images/} }
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{tcolorbox}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref} 
+\usepackage{xcolor} % For custom colors
+\lstset{
+	language=Python,                % Choose the language (e.g., Python, C, R)
+	basicstyle=\ttfamily\small, % Font size and type
+	keywordstyle=\color{blue},  % Keywords color
+	commentstyle=\color{gray},  % Comments color
+	stringstyle=\color{red},    % String color
+	numbers=left,               % Line numbers
+	numberstyle=\tiny\color{gray}, % Line number style
+	stepnumber=1,               % Numbering step
+	breaklines=true,            % Auto line break
+	backgroundcolor=\color{black!5}, % Light gray background
+	frame=single,               % Frame around the code
+}
+\usepackage{float}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+	\usepackage[]{amssymb} %gives us the character \varnothing
+	
+	\title{Lecture 1, IEOR 4732\\
+	\small{Options, Pricing, and CF\\
+期貨, 對其定價, 以及特徵方程}}
+	\author{Zongyi Liu}
+	\date{Thu, Jan 23, 2025}
+	\begin{document}
+		\maketitle
+\tableofcontents
+\section{總覽 (Overview)}
+整本書, 以及整門課分成兩部分:
+
+\underline{Part I - 定價和估值}
+
+\begin{itemize}
+  \item 變換技巧 (Transform Techniques)
+  \item PDE和PIDE的數值解 (Numerical solution of PDEs/PIDEs)
+  \item 模擬 (Simulation)
+  \item 深度神經網路 (Deep Neural Networks (DNNs))
+\end{itemize}
+
+\underline{Part II- 調優和估計}
+
+\begin{itemize}
+  \item 模型調優 (Model Calibration)
+  \item 建立模型 (Construction/Cooking)
+  \item 估計參數 (Parameter Estimation)
+\end{itemize}
+
+概述來講, 這本書分成兩個部分, 一個是定價和估值, 就是進行轉換, 對PDE等進行數值求解. 另一個就是校準, 完善模型. 
+
+\subsection{變換技巧 (Transform Techniques)}
+變換技巧主要用於期權定價以及時間的降噪, 例如
+
+\begin{itemize}
+  \item 快速傅立葉變換 (Fast Fourier transform (FFT))
+  \item 分部快速傅立葉變換 (Fractional fast Fourier trânsform (FrFFT))
+  \item 餘弦方法 (COS method)
+  \item 鞍點方法 (Saddle-point method)
+\end{itemize}
+
+\subsection{PDE的數值解 (Numerical solution of PDEs/PIDEs)}
+\begin{itemize}
+  \item 通常來說, 變換的技巧無法用來解決路徑依賴型 (path dependent) 的期權.
+  \item 對於馬爾可夫過程, 存在一個 PDE/PIDE (FeynmanKac formula) 可以給出期權價格.
+  \item 需要解一個偏微分方程來對期權定價. 
+  \item 但是通常都需要使用數值方法 (numerically) 來求解.
+\end{itemize}
+
+\subsection{蒙特卡羅方法 (Monte-Carlo Methods)}
+有許多地方的應用:
+
+\begin{itemize}
+  \item 從各種分佈中取樣. 
+  \item VaR.
+  \item Options pricing.
+\end{itemize}
+
+\subsection{模型調優 (Model Calibration)}
+\begin{itemize}
+  \item 首先, 我們假設模型的參數集 (parameter set) $\Theta$ 是已知的. 
+  \item 在已知市場價格後, 最優參數集合 $\Theta^{*}$ 是什麼?
+  \item 尋找使得市場價格和模型價格相近的參數的過程被稱為模型調優 (model calibration).
+  \item 應用: marking/extrapolation/risk management/scenario analysis/trading.
+\end{itemize}
+
+\subsection{建立模型 (Construction/Cooking)}
+\begin{itemize}
+  \item 擬合 (Fitting): 尋找一個或一組函數/多項式, 來適應隱含波動率平面 (implied volatility surface).
+  \item 建立 (Construction): 建立一個收益曲線 (yield curve) 一個零利率 (zero-coupon) 債券, 基於 LIBOR 率, Swap 率, 和歐元期貨.
+\end{itemize}
+
+\subsection{參數估計 (Parameter Estimation)}
+\begin{itemize}
+  \item 市場的快照 vs. 跨面板的時間序列.
+  \item 價格的時間序列.
+  \item 更小的參數更好, 為了\underline{避免過度擬合}.
+  \item 未能很好的定價證明這個東西過高或過低, 是交易的一個信號. 
+  \item 應用: 策略和交易. 
+\end{itemize}
+
+\section{香草期權 (Vanilla Options)}
+\subsection{買入權期權 (The Call Option)}
+\textbf{定義}
+
+購買者具有買入這個期權, 在未來某日成熟達到執行價格 (strike price) 情況下的權力. 銷售者有義務去銷售預售期權 (underlying), 如果購買者要求買入 (call). 銷售者賺取了一定的權利金 (premium).
+
+
+\subsection{賣出權期權 (The Put Option)}
+\textbf{定義}
+
+購買者擁有賣出這個期權, 在未來某日成熟達到執行價格 (strike price) 情況下的權力. 銷售者有義務去買入預售期權 (underlying), 如果購買者要求拋出 (put). 銷售者賺取了一定權利金 (premium).
+
+
+\textbf{Q\&A}
+
+\noindent Q: 誰是期權合同的購買/銷售者?\\
+A: 對沖者 (hedgers) 和投機者 (speculators), 他們建立市場並造成流動性.\\
+Q: 什麼決定了一個期權的價格?\\
+A: 供給和需求. 
+
+\subsection{一個投機的例子 (A Speculator Case)}
+\noindent Q: 如果預期蘋果的股票上漲, 會購買 call 還是 put option? \\
+A: 購買買入期權.\\
+Q: 這樣做的益處?\\
+A: 如果買買入權期權的話, 和直接購買股票的差異. 買入期權可以規避損失, 使最大損失減小. 
+
+\textbf{A Speculator Example}
+
+\begin{center}
+\begin{tabular}{l|c|c|l}
+Scenario & Today price & Future Price & P $\& \mathrm{~L}$ \\
+\hline\hline
+1 & $\$ 190$ & $\$ 140$ & $-\$ 5,000$ \\
+2 & $\$ 190$ & $\$ 170$ & $-\$ 2,800$ \\
+3 & $\$ 190$ & $\$ 190$ & $-\$ 0$ \\
+4 & $\$ 190$ & $\$ 210^{20105}$ & $-\$ 2,000$ \\
+5 & $\$ 190$ & $\$ 240$ & $+\$ 5,000$ \\
+\end{tabular}
+\end{center}
+\captionof{table}{Speculator bought 100 Apple stocks at $\$ 190$}
+
+\begin{center}
+\begin{tabular}{l|c|c|l|l}
+Scenario & Today price & Future Price & Payoff & P\&L \\
+\hline\hline
+1 & $\$ 190$ & $\$ 140$ & $\$ 0$ & $-\$ 500$ \\
+2 ducal & $\$ 190$ & $\$ 170$ & $\$ 0$ & $-\$ 500$ \\
+For & $\$ 190$ & $\$ 190$ & $\$ 0$ & $-\$ 500$ \\
+4 & $\$ 190$ & $\$ 210$ & $\$ 1,000$ & $+\$ 500$ \\
+5 & $\$ 190$ & $\$ 240$ & $\$ 4,000$ & $+\$ 3,500$ \\
+\end{tabular}
+\end{center}
+\captionof{table}{Table: Speculator bought a 3-month maturity call option at strike of $\$ 200$ and paid $\$ 5$}
+
+\textbf{Observations}
+
+\noindent Q: 這裡的權衡是什麼?\\
+A: 通過購買期權, 投機者得以控制他的下行風險, 但是同時減少了他的上行的收益\\
+Q: 投機者是否必須保有contract, 直到成熟? \\
+A: 不, 他們可以在成熟之前就賣掉.
+
+\subsection{對沖者 (Hedgers)}
+
+\noindent Q: 假設你的投資組合裡面有蘋果的股票, 你是否會對沖? \\
+A: 通過購買一個賣出期權來獲益. \\
+Q: 賣出期權的益處是什麼?\\
+A: 得以保留 portfolio 中的價值, 免於股票價值的大幅跌落. 
+
+\textbf{A Hedger Example}
+\begin{center}
+\begin{tabular}{l|c|c|l}
+Scenario & Today price & Future Price & Future Portfolio Value \\
+\hline\hline
+1 & $\$ 190$ & $\$ 130$ & $\$ 13,000$ \\
+2 & $\$ 190$ & $\$ 160$ & $\$ 16,000$ \\
+3 & $\$ 190$ & $\$ 190$ & $\$ 19,000$\\
+4 & $\$ 190$ & $\$ 220$ & $\$ 22,000$ \\
+5 & $\$ 190$ & $\$ 250$ & $\$ 25,000$ \\
+\end{tabular}
+\end{center}
+\captionof{table}{Table: Hedger did not buy a put option, her today's portfolio value is $\$ 19,000$}
+
+\begin{center}
+\begin{tabular}{l|c|c|c|l}
+Scenario & Today price $^{5}$ & Future Price & Payoff & Future Portfolio Value \\
+\hline\hline
+1 & $\$ 190$ & $\$ 130$ & $\$ 5,000$ & $\$ 13,000+\$ 5,000-\$ 800=\$ 17,200$ \\
+2 & $\$ 190$ & $\$ 160$ & $\$ 2,000$ & $\$ 16,000+\$ 2,000-\$ 800=\$ 17,200$ \\
+3 & $\$ 190$ & $\$ 190$ & $\$ 0$ & $\$ 19,000-\$ 800=\$ 18,200$ \\
+4  & $\$ 190$ & $\$ 190$ & $\$ 220$ & $\$ 0$ \\
+5 & $\$ 190$ & $\$ 250$ & $\$ 0$ & $\$ 25,000-\$ 800=\$ 21,200$ \\
+\end{tabular}
+\end{center}
+\captionof{table}{Table: Speculator bought a 6-month maturity put option at strike of \$180 and paid \$8}
+
+\textbf{Observations}
+
+\noindent Q: 購買賣出期權的影響是什麼? \\
+A: 通過購買一個賣出期權, 她得以對沖她的位置, 因為這個投資組合的價值不會低於某個值, 不論蘋果的股票如何下跌.  \\
+Q: 如何給一個期權估值?
+
+
+對於期權的合同來講:
+
+\begin{itemize}
+  \item $S_{0}$: 今日的價格 (已知)
+  \item K: 執行價格 (strike price, 提前規定)
+  \item $T$: 成熟度 (maturity, 提前規定)
+  \item $V_{0}(K, T)$: 今日對於 $K$ 和 $T$ 的權利金 (premium)
+  \item $S_{T:}$: 在時間 $T$ 時的價格 (未知)
+\end{itemize}
+
+\subsection{買入權期權 (Call)}
+對於一個買入權期權 (call option), 有:
+\begin{itemize}
+	\item 今日的權利金: $C_{0}(K, T)$
+	\item 在成熟時的收益: $\left(S_{T}-K\right)^{+}$
+\end{itemize}
+
+\includegraphics[max width=0.6\textwidth, center]{F1}
+
+\subsection{賣出權期權 (Put)}
+對於一個賣出權期權 (put option), 有:
+\begin{itemize}
+	\item 今日的權利金: $P_{0}(K, T)$
+	\item 在成熟時的收益: $\left(K-S_{T}\right)^{+}$
+\end{itemize}
+\includegraphics[max width=0.6\textwidth, center]{2025_03_21_972ff515dacd31de80dcg-21}
+
+\section{簡單的定價公式 (Simple Pricing)}
+
+對於期權定價, 需要什麼?
+
+\begin{itemize}
+  \item 收益函數:
+\end{itemize}
+
+$$
+\begin{aligned}
+& \text {call: }\left(S_{T}-K\right)^{+} \\
+& \text {put: }\left(K-S_{T}\right)^{+}
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 股票價格在時間 $T$ 時候的(條件) 概率密度函數, 也即 $S_{\bar{c}}$ 給定今日的價格 $S_{0}$, 換句話說, $f\left(S_{T} \mid S_{0}\right)$.
+\end{itemize}
+
+\subsection{如何給一個期權定價? (How to Price an Option?)}
+對於概率密度函數 $f\left(S_{T} \mid S_{0}\right)$ 的 payoff 求積分. 
+
+
+\noindent Q: 什麼缺失了?\\
+A: 貼現 (discount), 我們目前討論了在過期時的期權價值, 我們需要考慮對於今天價值的貼現. 
+
+\subsection{以數學來給期權定價 (Price the Options Mathematically)}
+\textbf{對於一個買入權期權}
+
+一個歐式買入權期權的價格 $C_{0}(K, T)$ 可以被描述為:
+
+$$
+\begin{aligned}
+& C_{0}(K, T)=e^{-r T} \mathbb{E}_{0}\left[\left(S_{T}-K\right)^{+}\right] \\
+& =e^{-r T} \int_{0}^{\infty}\left(S_{T}-K\right)^{+} f\left(S_{T} \mid S_{0}^{2}\right) d S_{T} \\
+& =e^{-r T} \int_{K}^{\infty}\left(S_{T \in T} 0^{2} K\right) f\left(S_{T} \mid S_{0}\right) d S_{T}
+\end{aligned}
+$$
+
+\begin{center}
+\includegraphics[max width=0.6\textwidth]{2025_03_21_972ff515dacd31de80dcg-24}
+\end{center}
+
+\textbf{對於一個賣出權期權}
+
+一個歐式賣出權期權的價格 $P_{0}(K, T)$ 可以被描述為:
+
+$$
+\begin{aligned}
+P_{0}(K, T) & =e^{-r T} \mathbb{E}_{0}\left[\left(K-S_{T}\right)^{+}\right] \\
+& =e^{-r T} \int_{0}^{\infty}\left(K-S_{T}\right)^{+} f\left(S_{T} Y S_{0}^{2 c e^{2}}\right) d S_{T} \\
+& =e^{-r T} \int_{0}^{K}\left(K_{1}+S_{T}\right) f\left(S_{T} \mid S_{0}\right) d S_{T}
+\end{aligned}
+$$
+
+\begin{center}
+\includegraphics[max width=0.6\textwidth]{2025_03_21_972ff515dacd31de80dcg-25}
+\end{center}
+
+\subsection{積分求值 (Evaluation of the Integral)}
+如何完成 $\rightarrow$ 首先使其成為一個有限積分 (call options), 然後設定 $N$ 等於長度為 $\eta$ 的子區間, 然後依次求各個子區間的值, 再加起來. 
+
+$$
+\begin{aligned}
+C_{0}(K, T) & =e^{-r T^{}} \int_{K}^{\infty}\left(S_{T}-K\right) f\left(S_{T}\right) d S_{T} \\
+& \approx e^{-r T} \int_{K}^{B}(S-K) f(S) d S
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 買入權期權: 依次選擇獨立的 $\eta$ 和 $N$, 然後設置網格點為:
+\end{itemize}
+
+$$
+s_{j}=K+(j-1) \eta \text { for } j = 1, \ldots, N+1
+$$
+
+此處的上界 (upper bound) 為 $B=s_{N+1}=K+N \eta$
+
+\begin{itemize}
+  \item 賣出權期權: 上界已知 (i.e. $K$ ), 選擇 $N$ 然後定義 $\eta=\frac{K}{N}$:
+\end{itemize}
+
+$$
+s_{j}=(j-1) \eta \text { 對於 } j=1, \ldots, N+1
+$$
+
+$$
+C_{0}(K, T) \approx e^{-r T} \sum_{j=1}^{N} \int_{s_{j}}^{s_{j+1}}(S-K) f(S) d S^{2}
+$$
+
+使用三角規則 (trapezoidal rule) 我們可以求每一個子積分的近似值:
+
+$$
+\int_{s_{j}}^{s_{j+1}}(S-K) f(S) d S \approx \frac{\eta}{2}\left(\left(s_{j}-K\right) f\left(s_{j}\right)+\left(s_{j+1}-K\right) f\left(s_{j+1}\right)\right)
+$$
+
+替換以求得:
+
+$$
+\begin{aligned}
+\left.C_{0}\left(K_{s} T\right)^{2}\right) & \approx e^{-r T} \sum_{j=1}^{N} \int_{s_{j}}^{s_{j+1}}(S-K) f(S) d S \\
+& \approx e^{-r T} \sum_{j=1}^{N} \frac{\eta}{2}\left(\left(s_{j}-K\right) f\left(s_{j}\right)+\left(s_{j+1}-K\right) f\left(s_{j+1}\right)\right)
+\end{aligned}
+$$
+
+\subsection{近似的買入/賣出權期權 (Approximated Call/Put Option)}
+$$
+\begin{aligned}
+& C_{0}(K, T) \approx e^{-r T} \sum_{j=1}^{N}\left(s_{j}-K\right) f\left(s_{j} \mid S_{0}\right) w_{j} \\
+& P_{0}(K, T) \underset{j=1}{\approx e^{-\kappa r} \sum^{N}\left(K-s_{j}\right) f\left(s_{j} \mid S_{0}\right) w_{j}}
+\end{aligned}
+$$
+
+此處有:
+$$
+w_{j}=\left\{\begin{array}{cc}
+\frac{1}{2} \eta & j=1 \\
+\eta & \text { otherwise }
+\end{array}\right.
+$$
+
+運算成本 (computational cost): $O(N)$
+
+\section{案例: 對數正態分佈 (Example: Lognormal Distribution)}
+\subsection{設定 (Settings)}
+$$
+f\left(S_{T} \mid S_{0}\right)=\frac{e^{-\frac{1}{2}\left(\frac{\ln S_{T}-\ln S_{0}-\left(r-q-\frac{\sigma^{2}}{2}\right) T}{\sigma \sqrt{T}}\right)^{2}}}{\sigma S_T \sqrt{2\pi{T}}}
+$$
+
+\begin{center}
+\includegraphics[max width=0.6\textwidth]{2025_03_21_972ff515dacd31de80dcg-30}
+\end{center}
+
+\begin{itemize}
+  \item 初始價格 $S_{0}: \$ 100$
+  \item 無息利率 (risk-free rate): 5\%
+  \item 分紅利率 (dividend rate): $1 \%$
+  \item 成熟度 $T$: 一年
+  \item 波動性 (volatility): $0.30 \%$
+   \item 執行價格 (strike) $K$ : $\$ 140$
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+ & \multicolumn{3}{|c|}{$\eta$} \\
+\hline
+$N$ & 0.25 & 0.5 & 150 \\
+\hline
+$2^{8}$ & 2.2247 & 2.8446 & 2.9130 \\
+\hline
+$2^{9}$ & 2.8450 & 2.9133 & 2,9136 \\
+\hline
+$2^{10}$ & 2.9134 & 2.9139 & 2.9136 \\
+\hline
+$2^{11}$ & 2.9140 & 2.9139 & 2.9136 \\
+\hline
+$2{ }^{12}$ & 2.9140 & 2.9139 & 2.9136 \\
+\hline
+$2^{13}$ & 2.9140 & 2.9139 & 2.9136 \\
+\hline
+\end{tabular}
+\end{center}
+\captionof{table}{Call prices for strike $K=\$ 140$ (out-the-money) for various values of $\eta \& N$}
+
+\begin{center}
+\begin{tabular}{|c||c||c|}
+\hline
+\textbf{$N$} & \textbf{$\eta$} & \textbf{Put Premium} \\
+\hline\hline
+$2^{8}$ & 0.546 & 37.0810 \\
+\hline
+$2^{9}$ & 0.273 & 37.0811 \\
+\hline
+$2^{10}$ & 0.136 & 27.0811 \\
+\hline
+$2^{11}$ & 0.068 & 37.0811 \\
+\hline
+$2^{12}$ & 0.034 & 37.0811 \\
+\hline
+$2^{13}$ & 0.017 & 37.0811 \\
+\hline
+\end{tabular}
+\end{center}
+\captionof{table}{Tables Put prices for strike $K=\$ 140$ (in-the-money) for various values $N$}
+
+\subsection{此方法的評估 (Assessment of this Approach)}
+\begin{itemize}
+	\item 這個方法如何? $\rightarrow$ 對於合適的 $N$ 和 $\eta$, 這個近似方法很不錯.
+	\item 這個方法的可行性如何? $\rightarrow$ 如果條件概率密度函數 $f\left(S_{T} \mid S 0\right)$ 是已知的而且在閉形式 (closed-form) 中可用, 任何數值的積分都可以使用以求這個期權的近似值; 但是總的來說 $f\left(S_{T} \mid S_{0}\right)$ 不一定能夠可用 (available).
+	\item 是否有替代或者更好的方法? $\rightarrow$ 是的
+\end{itemize}
+
+\section{特徵函數 (Characteristic Function)}
+\subsection{傅立葉和反傅立葉變換 (Fourier and Inverse Fourier Transform)}
+\textbf{定義}
+
+對於一個函數 $f(x)$, 它的傅立葉變換為:
+
+$$
+\Phi(\nu)=\int_{-\infty}^{\infty} e^{i \nu x} f(x) d x
+$$
+
+\textbf{定義}
+
+有 $\Phi(\nu)$, 函數 $f(x)$ 可以通過反向 (inverse) 傅立葉變換被恢復.
+
+$$
+f(x)=\frac{1}{2 \pi} \int_{-\infty}^{\infty} e^{-i \nu x} \Phi(\nu) d \nu
+$$
+
+\subsection{特徵函數 (Characteristic Function)}
+\textbf{定義}
+
+若 $f(x)$ 是一個變量 $x$ 的 PDF, 則它的傅立葉變換被稱為特徵函數:
+
+$$
+\begin{aligned}
+\Phi(\nu) & =\int_{-\infty}^{\infty} e^{i \nu x} f(x) d x \\
+& =\mathbb{E}\left(e^{i \nu x}\right)
+\end{aligned}
+$$
+
+$f(x)$ 可以通過它的特徵函數, 借助反向傅立葉變換恢復.
+
+\subsection{案例: 布萊克-莫頓-休斯模型 (Example: Black-Merton-Scholes)}
+$S_{t}$ 有 B-M-S SDE:
+
+$$
+d S_{t}=(r-q) S_{t} d t+\sigma S_{t} d W_{t}
+$$
+
+股票價格的對數的特徵函數為:
+
+$$
+\Phi(\nu) = \exp\left( i \left( \ln S_0 + \left( r - q - \frac{\sigma^2}{2} \right) T \right) \nu - \frac{\sigma^2 \nu^2}{2} T \right)
+$$
+
+\section{定價繼續 (Continuation of Pricing)}
+\subsection{設置 (Set-Up)}
+\begin{itemize}
+  \item $S_{T}: T$ 時刻的價格.
+  \item $f\left(S_{T} \mid S_{0}\right)$: $S_{T}$ 的密度. 
+  \item $q\left(s_{T} \mid s_{0}\right)$: $s_{T}=\ln \left(S_{T}\right)$ 的密度.
+  \item $k=\ln (K)$: 執行價格的對數. 
+  \item $\Phi(\nu)$: 股票價格的對數的特徵函數. 
+  \item $\mathcal{C}_{T}(k)$: $T$-成熟度的買入權期權 $K=e^{k}$ 的價格. 
+\end{itemize}
+
+\subsection{公式化 (Formulation)}
+一個歐式買入權期權價格 $C_{T}(k)$ 可以被描述為:
+
+$$
+\begin{aligned}
+e^{-r T} \mathbb{E}_{0}\left[\left(S_{T}-K\right)^{+}\right] & =e^{-r T} \int_{K}^{\infty}\left(S_{T}-K\right) f\left(S_{T} \mid S_{0}\right) d S_{T} \\
+& =C_{T}(k)
+\end{aligned}
+$$
+
+\subsection{兩個 PDF ($f\left(S_{T} \mid S_{0}\right) \text{ and } q\left(s_{T} \mid s_{0}\right)$)}
+
+資產價格的PDF:
+$$
+f(S_T \mid S_0) = \frac{1}{\sigma S_T \sqrt{2 \pi T}} 
+\exp\left\{
+-\frac{1}{2}
+\left(
+\frac{\ln S_T - \ln S_0 - (r - q - \frac{\sigma^2}{2}) T}
+{\sigma \sqrt{T}}
+\right)^2
+\right\}
+$$
+
+對數資產價格的PDF:
+$$
+q(s_T \mid s_0) = \frac{1}{\sigma \sqrt{2 \pi T}} 
+\exp\left\{
+-\frac{1}{2}
+\left(
+\frac{s_T - s_0 - (r - q - \frac{\sigma^2}{2}) T}
+{\sigma \sqrt{T}}
+\right)^2
+\right\}
+$$
+
+\subsection{修正買入權期權及其傅立葉變換 (Modified Call and its Fourier Transform)}
+定義 $\mathrm{c}_{T}(k)=e^{\alpha k} C_{T}(k)$. 令 $\Psi_{T}(\nu)$ 成為其傅立葉變換:
+$$
+\begin{aligned}
+& \Psi_{T}(\nu)=\int_{-\infty}^{\infty} e^{i \nu k} c_{T}(k) d k \\
+& =\int_{-\infty}^{\infty} \operatorname{}^{} e^{i \nu k} e^{\alpha k} C_{T}(k) d k
+\end{aligned}
+$$
+
+可以使用反向傅立葉轉換以得到: 
+
+$$
+C_{T}(k)=\frac{e^{-\alpha k}}{2 \pi} \int_{-\infty}^{\infty} e^{-i \nu k} \Psi_{T}(\nu) d \nu
+$$
+
+\subsection{通過調整積分順序進行運算 (Evaluation by Switching Order of Integration)}
+通過調整積分的順序, 展現了傅立葉轉換下的提修正買入權期權 (Modified Call Price) 的推導:
+
+$$
+\begin{aligned}
+	\Psi_T(\nu) 
+	&= \int_{-\infty}^{\infty} e^{i\nu k} c_T(k)\,dk \\
+	&= \int_{-\infty}^{\infty} e^{i\nu k} e^{\alpha k} 
+	\left(
+	e^{-rT} \int_k^{\infty} (e^s - e^k) q(s)\,ds
+	\right) dk \\
+	&= e^{-rT} \int_{-\infty}^{\infty} \int_{-\infty}^{s} 
+	e^{(\alpha + i\nu)k} (e^s - e^k) q(s)\,dk\,ds \\
+	&= e^{-rT} \int_{-\infty}^{\infty} q(s) 
+	\left(
+	\int_{-\infty}^{s} e^{(\alpha + i\nu)k} (e^s - e^k)\,dk
+	\right) ds
+\end{aligned}
+$$
+
+\subsection{內積分運算 (Evaluation of Inner Integral)}
+
+\[
+\int_{-\infty}^{s} e^{(\alpha + i\nu)k} (e^s - e^k) \, dk 
+= 
+e^s \left. \frac{e^{(\alpha + i\nu)k}}{\alpha + i\nu} \right|_{-\infty}^{s}
+- 
+\left. \frac{e^{(\alpha + i\nu + 1)k}}{\alpha + i\nu + 1} \right|_{-\infty}^{s}
+\]
+\[
+=
+e^s \cdot \frac{e^{(\alpha + i\nu)s}}{\alpha + i\nu}
+-
+\frac{e^{(\alpha + i\nu + 1)s}}{\alpha + i\nu + 1}
+\]
+\[
+=
+\frac{e^{(\alpha + i\nu + 1)s}}{(\alpha + i\nu)(\alpha + i\nu + 1)}
+\]
+
+\subsection{關於 $\Phi(\nu)$ 的 $\Psi_{T}(\nu)$ ($\Psi_{T}(\nu)$ with Respect to $\Phi(\nu)$)}
+\[
+\Psi_T(\nu) = e^{-rT} \int_{-\infty}^{\infty} q(s) \cdot \frac{e^{(\alpha + i\nu + 1)s}}{(\alpha + i\nu)(\alpha + i\nu + 1)} \, ds
+\]
+
+\[
+= \frac{e^{-rT}}{(\alpha + i\nu)(\alpha + i\nu + 1)} \int_{-\infty}^{\infty} e^{(\alpha + i\nu + 1)s} q(s) \, ds
+\]
+
+\[
+= \frac{e^{-rT}}{(\alpha + i\nu)(\alpha + i\nu + 1)} \cdot \Phi(\nu - (\alpha + 1)i)
+\]
+
+\subsection{通過逆向傅立葉變換得到的買入權期權 (Call Option via Inverse Fourier Transform)}
+回顧:
+
+\[
+C_T(k) = \frac{e^{-\alpha k}}{2\pi} \int_{-\infty}^{\infty} e^{-i\nu k} \boxed{\Psi_T(\nu)} \, d\nu
+\]
+
+此處有:
+
+\[
+\Psi_T(\nu) = \frac{e^{-rT}}{(\alpha + i\nu)(\alpha + i\nu + 1)} \cdot \Phi(\nu - (\alpha + 1)i)
+\]
+
+\subsection{計算積分 (Integral Evaluation)}
+$$
+\begin{aligned}
+C_{T}(k) & =\frac{e^{-\alpha k}}{\pi} \int_{0}^{\infty} e^{-i \nu k} \Psi_{T}(\nu) d \nu \\
+& \approx \frac{e^{-\alpha k}}{\pi} \int_{0}^{B} e^{-i \nu k} \Psi_{T}(\nu) d \nu 
+\end{aligned}
+$$
+
+令 $N$ 等於長度為 $\eta$ 的子區間, 且有:
+
+$$
+\eta=\frac{B}{N}
+$$
+
+$ \nu_{j}=(j-1){ }^{2} \text { for } j=1, \ldots, N+1 \text {. } $
+$$
+C_{T}(k) \approx \frac{e^{-\alpha k}}{\pi} \sum_{j=1}^{N} \int_{\nu_{j}}^{\nu_{j+1}} e^{-i \nu k} \Psi_{T}(\nu) d \nu
+$$
+
+使用三角規則我們可以得到每一個子區間的近似值:
+
+$$
+\int_{\nu_{j}}^{\nu_{j+1}} e^{-i \nu k} \Psi_{T}(\nu) d \nu \approx \frac{\eta}{2}\left(e^{-i \nu_{j} k} \Psi_{T}\left(\nu_{j}\right)+e^{-i \nu_{j+1} k} \Psi_{T}\left(\nu_{j+1}\right)\right)
+$$
+
+替代可得:
+
+$$
+\begin{aligned}
+	C_T(k) &\approx \frac{e^{-\alpha k}}{\pi} \sum_{j=1}^N \int_{\nu_j}^{\nu_{j+1}} e^{-i\nu k} \Psi_T(\nu)\, d\nu \\
+	&\approx \frac{e^{-\alpha k}}{\pi} \sum_{j=1}^N \frac{\eta}{2} \left( e^{-i \nu_j k} \Psi_T(\nu_j) + e^{-i \nu_{j+1} k} \Psi_T(\nu_{j+1}) \right)
+\end{aligned}
+$$
+
+\subsection{特定執行的買入權價格 (Call Price for a Specific Strike)}
+$$
+C_{T}(k) \approx \frac{e^{-\alpha k}}{\pi} \sum_{j=1}^{N} e^{-i \nu_{j} k} \psi_{T}\left(\nu_{j}\right) w_{j}
+$$
+
+有:
+
+$$
+w_{j}=\left\{\begin{array}{cc}
+\frac{1}{2} \eta & j=1 \\
+\eta & \text { otherwise }
+\end{array}\right.
+$$
+
+運算成本: $O(N)$
+
+\subsection{比較 (Comparison)}
+$$
+C_{T}(k) \approx \frac{e^{-\alpha k}}{\pi} \sum_{j=1}^{N} e^{-i \nu_{j} k} \Psi_{T}\left(\nu_{j}\right) w_{j}
+$$
+
+對比:
+
+$$
+C_{0}(K, T)\approx e^{-r T} \sum_{j=1}^{N}\left(s_{j}-K\right) f\left(s_{j} |S_{0}\right) w_{j}
+$$
+
+有:
+
+$$
+w_{j}=\left\{\begin{array}{cc}
+\frac{1}{2} \eta & j=1 \\
+\eta & \text { otherwise }
+\end{array}\right.
+$$
+
+\subsection{不同執行權的買入權價格 (Calls with Various Strikes)}
+\begin{itemize}
+  \item 如果我們只關心一個特定的執行期權, 那不需要其他步驟. 
+  \item 對於計算一個期權的權利金, 在成熟時的不同執行價格, 假設 $m$ 次執行, 重複 $m$ 次, 運算成本則為 $O(m \times N)$. 
+  \item 我們可以使用 FFT 得到 $N$ 次不同執行權的權利金價格, 此處的運算成本為 $O(N \ln N)$ 而不是 $O\left(N^{2}\right)$.
+\end{itemize}
+
+\subsection{不同執行權的買入權價格 (Calls with Various Strikes)}
+對於 $m=1, \ldots, N$, 有
+
+$$
+\begin{aligned}
+	C_T(k_m) &\approx \frac{e^{-\alpha k_m}}{\pi} \sum_{j=1}^{N} e^{-i \nu_j k_m} \Psi_T(\nu_j) w_j \\
+	&= \frac{e^{-\alpha k_m}}{\pi} \sum_{j=1}^{N} e^{-i (j-1)\eta (m-1)\Delta k} e^{-i \beta \nu_j} \Psi_T(\nu_j) w_j \\
+	&= \frac{e^{-\alpha k_m}}{\pi} \sum_{j=1}^{N} e^{-i \lambda \eta (j-1)(m-1)} 
+	\boxed{ e^{-i \beta \nu_j} \Psi_T(\nu_j) w_j } \\
+	C_T(k_m) &\approx \frac{e^{-\alpha k_m}}{\pi} \sum_{j=1}^{N} e^{-i \lambda \eta (j-1)(m-1)} \boxed{x(j)}
+\end{aligned}
+$$
+
+\subsection{快速傅立葉變換 (Fast Fourier Transform)}
+快速傅立葉提供了一個有效的算法, 如下:
+
+\[
+\omega(m) = \sum_{j=1}^{N} e^{-i \frac{2\pi}{N}(j - 1)(m - 1)} \, x(j)
+\]
+
+對於 $m=1, \ldots, N$\\
+\noindent Q: 它的有效性如何?\\
+A: 運算成本變成了 $-O(N \ln N)$ 而不是 $O\left(N^{2}\right)$\\
+Q: 如何使用 FFT?\\
+A: 通過設置 $\lambda \eta=\frac{2 \pi}{N}$, 我們可以使用 FFT 來計算總和. 
+
+\subsection{應用 (Implementation)}
+有 $\Phi(\nu)$, 選擇 $\eta, N=2^{n}$ 和 $\beta$, 來計算 $\lambda=\frac{2 \pi}{N \eta}$, $\nu_{j}=(j-1) \eta$, 然後設置 $\alpha>0$. 建立向量 $\mathbf{x}$.
+
+\[
+\mathbf{x} =
+\begin{pmatrix}
+	x_1 \\
+	x_2 \\
+	\vdots \\
+	x_N
+\end{pmatrix}
+=
+\begin{pmatrix}
+	\displaystyle\frac{\eta}{2} \cdot \frac{e^{-rT}}{(\alpha + i \nu_1)(\alpha + i \nu_1 + 1)} \, e^{-i \beta \nu_1} \, \Phi\left( \nu_1 - (\alpha + 1)i \right) \\
+	\displaystyle\frac{\eta}{(\alpha + i \nu_2)(\alpha + i \nu_2 + 1)} \cdot e^{-rT} \, e^{-i \beta \nu_2} \, \Phi\left( \nu_2 - (\alpha + 1)i \right) \\
+	\vdots \\
+	\displaystyle\frac{\eta}{(\alpha + i \nu_N)(\alpha + i \nu_N + 1)} \cdot e^{-rT} \, e^{-i \beta \nu_N} \, \Phi\left( \nu_N - (\alpha + 1)i \right)
+\end{pmatrix}
+\]
+
+$$
+\mathbf{y}=\mathrm{fft}(\mathbf{x})
+$$
+
+在執行時的買入權價格為 $k_{m}$ 對於 $m=1, \ldots, N$
+
+\[
+\begin{pmatrix}
+	C_T(k_1) \\
+	C_T(k_2) \\
+	\vdots \\
+	C_T(k_N)
+\end{pmatrix}
+=
+\begin{pmatrix}
+	\displaystyle \frac{e^{-\alpha k_1}}{\pi} \, \mathrm{Re}(y_1) \\
+	\displaystyle \frac{e^{-\alpha k_2}}{\pi} \, \mathrm{Re}(y_2) \\
+	\vdots \\
+	\displaystyle \frac{e^{-\alpha k_N}}{\pi} \, \mathrm{Re}(y_N)
+\end{pmatrix}
+\]
+
+where $k_{m}=\beta+(m-1) \lambda$
+
+\subsection{$\beta$ 的選擇 (Choice of $\beta$)}
+$$
+k_{m}=\beta+(m-1) \lambda \text { 對於 } m=1, \ldots, N
+$$
+
+有兩個常見的選擇: 
+
+\begin{itemize}
+  \item 範圍的中部對應平價狀態, 設定 $\beta=\ln \left(S_{0}\right)-\frac{N}{2} \lambda$. 
+  \item 第一個買入權對應特定的執行價格 $K$, 設定 $\beta=\ln (K)$.
+\end{itemize}
+
+\section{案例 (Examples)}
+\subsection{參數 (Parameters)}
+\begin{itemize}
+  \item 初始價格 $S_{0}$: $\$ 100$
+  \item 執行價格 $K$: $\$ 80$
+  \item 無息利率: $5\%$
+  \item 分紅率: ${ }_{} 1 \%$
+  \item 成熟度 $T$:: 一年
+\end{itemize}
+
+\subsection{案例一: BMS 模型 (Example 1: Black-Merton-Scholes)}
+$S_{t}$ 有如下的 BMS SDE:
+
+$$
+d S_{t}=(r-q) S_{t} d t+\sigma S_{t} d W_{t}
+$$
+
+股票價格的對數的特徵函數為:
+
+$$
+\Phi(\nu)=e^{i\left(\ln S_{0}+\left(r-q-\frac{\sigma^{2}}{2}\right) T\right) \nu-\frac{\sigma^{2} \nu^{2}}{2} T}
+$$
+
+在此案例中, 我們假設 $\Theta=\{\sigma\}=\{0.3\}$.
+
+\begin{center}
+\begin{tabular}{|c||c|c||r|r|}
+\hline
+\multicolumn{1}{|c|}{} & \multicolumn{2}{c|}{$\eta=0.10$} & \multicolumn{2}{c|}{$\eta=0.25$} \\
+\hline\hline
+$\alpha$ & $N=2^{6}$ & $2^{10}$ & $2^{6}$ & $2^{10}$ \\
+\hline\hline
+0.01 & 138.7372 & 138.8336 & 372.1118 & 372.1118 \\
+\hline
+0.5 & 25.4710 & 25.6146 & 25.6150 & 25.6150 \\
+\hline
+1.0 & 25.4432 & 25.6146 & 25.6146 & 25.6146 \\
+\hline
+1.5 & 25.4497 & 25.6146 & 25.6146 & 25.6146 \\
+\hline
+2.0 & 25.5024 & 25.6146 & 25.6146 & 25.6146 \\
+\hline
+5.0 & 26.4853 & 25.6146 & 25.6146 & 25.6146 \\
+\hline
+10.0 & 9.0641 & 25.6146 & 25.6141 & 25.6146 \\
+\hline
+\end{tabular}
+\end{center}
+\captionof{table}{B-M-S premiums for various values of $\alpha, N$, and $\eta$}
+
+\subsection{案例二: 赫森模型 (Example 2: Heston Stochastic Volatility Model)}
+$S_{t}$ 在此情況下有 SDE:
+
+$$
+\begin{aligned}
+d S_{t} & =(r-q) S_{t} d t+{\sqrt{v_{t}}} S_{t} d W_{t}^{(1)^{}} \\
+d v_{t} & =\kappa\left(\theta-v_{t}\right) d t+\lambda \sqrt{v_{v}} d W_{t}^{(2)}
+\end{aligned}
+$$
+
+股票價格的對數的特徵函數為:
+
+$$
+\begin{aligned}
+\Phi(u) & =\frac{\exp \left\{i u \ln S_{0}+i u(r-q) T+\frac{\kappa \theta T(\kappa-i \rho \sigma u)}{\sigma^{2}}\right\}}{\left(\cosh \frac{\gamma T}{2}+\frac{\kappa-i \rho \sigma u}{\gamma} \sinh \frac{\gamma T}{2}\right)^{\frac{2 \kappa \theta}{\sigma^{2}}}} \\
+& \times \exp \left\{\frac{-\left(u^{2}+i u\right) v_{0}}{\gamma \operatorname{coth} \frac{\gamma T}{2}+\kappa-i \rho \sigma u}\right\}
+\end{aligned}
+$$
+
+有: 
+
+$$
+\gamma=\sqrt{\sigma^{2}\left(u^{2}+i u\right)+\left(\kappa - i \rho \sigma u\right)^{2}}
+$$
+
+對於此例子, 我們假設:
+
+$$
+\Theta=\left\{\left\{k , \theta, \lambda, \rho, v_{0}\right\}=\{2,0.05,0.3,-0.7,0.04\}\right.
+$$
+
+\begin{center}
+\begin{tabular}{|c||c|c||r|c|}
+\hline
+\multicolumn{1}{|c|}{} & \multicolumn{2}{c|}{$\eta=0.10$} & \multicolumn{2}{c|}{$\eta=0.25$} \\
+\hline\hline
+$\alpha$ & $N=2^{6}$ & $2^{10}$ & $2^{6}{ }^{6}+0^{0}$ & $2^{10}$ \\
+\hline\hline
+0.01 & 139.0174 & 139.5996 & 375.2260 & 375.2224 \\
+\hline
+0.5 & 24.5194 & 25.2428 & 25.2457 & 25.2432 \\
+\hline
+1.0 & 24.3968 & 25.2428 & 25.2431 & 25.2428 \\
+\hline
+1.5 & 24.3160 & 25.2428 & 25.2393 & 25.2428 \\
+\hline
+2.0 & 24.2985 & 25.2428 & 25.2335 & 25.2428 \\
+\hline
+5.0 & 26.6605 & 25.2428 & 25.1255 & 25.2428 \\
+\hline
+20.0 & 48.7592 & 25.2428 & 25.3538 & 25.2428 \\
+\hline
+\end{tabular}
+\end{center}
+\captionof{table}{Premiums for various values of $\alpha, N$, and $\eta$}
+
+\subsection{案例三: 方差伽馬模型 (Example 3: Variance Gamma Model)}
+$S_{t}$ 被給定為:
+
+$$
+S_{t}=S_{0} e^{(r-q+\omega) t+X(t ; \partial, \nu, \theta)}
+$$
+
+有 (這裡是隨時間變動的布朗運動):
+
+$$
+X\left(t ; \sigma, \nu, \theta\right)=\theta \gamma(t ; 1, \nu)+\sigma W(\gamma(t ; 1, \nu))
+$$
+
+股票價格的對數的特徵函數為:
+
+\[
+\Phi(u) = \exp\left( iu \left( \ln S_0 + (r - q)T \right) \right)
+\left( \frac{1}{1 - iu\theta \nu + \frac{1}{2} \sigma^2 u^2 \nu} \right)^{\frac{T}{\nu}}
+\]
+
+
+在此案例中, 我們假設:
+
+$$
+\Theta=\{\sigma, \nu, \theta\}=\{0.3,0.5,-0.4\}
+$$
+
+可以發現這些權利金的差別都不大.
+
+\begin{center}
+\begin{tabular}{|c||c|c||r|c|}
+\hline
+\multicolumn{1}{|c|}{} & \multicolumn{2}{c|}{$\eta=0.10$} & \multicolumn{2}{c|}{$\eta=0.25$} \\
+\hline\hline
+$\alpha$ & $N=2^{6}$ & $2^{10}$ & $2^{6}$ & $2^{10}$ \\
+\hline\hline
+0.01 & 141.2533 & 141.4392 & 374.7132 & 374.7175 \\
+\hline
+0.5 & 28.0383 & 28.2203 & 28.2153 & 28.2206 \\
+\hline
+1.0 & 28.0855 & 28.2203 & 28.2139 & 28.2203 \\
+\hline
+1.5 & 28.1944 & 28.2203 & 28.2129 & 28.2203 \\
+\hline
+2.0 & 28.3824 & 28.2203 & 28.2124 & 28.2203 \\
+\hline
+5.0 & 31.5220 & 28.2203 & 28.2570 & 28.2203 \\
+\hline
+20.0 & 9.2062 & 28.2203 & 29.4317 & 28.2203 \\
+\hline
+\end{tabular}
+\end{center}
+\captionof{table}{Premiums for various values of $\alpha, N$, and $\eta$}
+
+\subsection{總結 (Findings and Observations)}
+\textbf{Pros}
+
+\begin{itemize}
+  \item Model-free setup
+  \item Fast $O(N \ln (N))$
+\end{itemize}
+
+\textbf{Cons}
+
+\begin{itemize}
+  \item Constraint on
+  \item Choice of $\eta, N$ and $\alpha$
+\end{itemize}
+
+
+\end{document}
