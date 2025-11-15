@@ -1,0 +1,301 @@
+\documentclass[letterpaper]{article} 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage[dvipsnames]{xcolor}
+\colorlet{LightRubineRed}{RubineRed!70}
+\colorlet{Mycolor1}{green!10!orange}
+\definecolor{Mycolor2}{HTML}{00F9DE}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{lipsum}
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage[export]{adjustbox}
+\graphicspath{ {./images/} }
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{tcolorbox}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref} 
+\usepackage{xcolor} % For custom colors
+\lstset{
+	language=Python,                % Choose the language (e.g., Python, C, R)
+	basicstyle=\ttfamily\small, % Font size and type
+	keywordstyle=\color{blue},  % Keywords color
+	commentstyle=\color{gray},  % Comments color
+	stringstyle=\color{red},    % String color
+	numbers=left,               % Line numbers
+	numberstyle=\tiny\color{gray}, % Line number style
+	stepnumber=1,               % Numbering step
+	breaklines=true,            % Auto line break
+	backgroundcolor=\color{black!5}, % Light gray background
+	frame=single,               % Frame around the code
+}
+\usepackage{float}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+	\usepackage[]{amssymb} %gives us the character \varnothing
+	
+	\title{Homework 2, IEOR 4732}
+	\author{Zongyi Liu}
+	\date{Sat, Mar 8, 2025}
+	\begin{document}
+		\maketitle
+		
+\section{Question}
+Pricing an up-and-out call (UOC) - Let $w(x, \tau)$ be the value of a derivative security that satisfies the following PIDE:
+
+$$
+\begin{array}{r}
+\frac{\partial w}{\partial \tau}(x, \tau)-(r-q) \frac{\partial w}{\partial x}(x, \tau)+r w(x, \tau) \\
+-\int_{-\infty}^{\infty}\left[w(x+y, \tau)-w(x, \tau)-\frac{\partial w}{\partial x}(x, \tau)\left(e^{y}-1\right)\right] k(y) d y=0
+\end{array}
+$$
+
+where:
+
+$$
+k(y)=\frac{e^{-\lambda_{p} y}}{\nu y^{1+Y}} \mathbf{1}_{y>0}+\frac{e^{-\lambda_{n}|y|}}{\nu|y|^{1+Y}} \mathbf{1}_{y<0}
+$$
+
+with:
+
+$$
+\begin{aligned}
+& \lambda_{p}=\left(\frac{\theta^{2}}{\sigma^{4}}+\frac{2}{\sigma^{2} \nu}\right)^{\frac{1}{2}}-\frac{\theta}{\sigma^{2}} \\
+& \lambda_{n}=\left(\frac{\theta^{2}}{\sigma^{4}}+\frac{2}{\sigma^{2} \nu}\right)^{\frac{1}{2}}+\frac{\theta}{\sigma^{2}}
+\end{aligned}
+$$
+
+and $x=\ln (S)$ and $\tau=T-t$. For an up-and-out call (UOC) option premium, this PIDE must be solved subject to the initial condition:
+
+$$
+w(x, 0)=\left(e^{x}-K\right)^{+}
+$$
+
+and boundary conditions:
+
+$$
+\begin{aligned}
+w\left(x_{0}, \tau\right) & =0 \quad \forall \tau \\
+w\left(x_{N}, \tau\right)=w(B, \tau) & =0 \quad \forall \tau
+\end{aligned}
+$$
+
+Use explicit-implicit finite difference scheme covered during the lecture to solve the PIDE. Calculate UOC option premium in this framework for the following parameters: spot price, $S_{0}=\$ 1900$; strike price $K=2000$; upper barrier $B=2200$, risk-free interest rate, $r=0.25 \%$; dividend rate, $q=1.5 \%$; maturity, $T=0.5$ year; $\sigma=25 \%, \nu=0.31$, $\theta=-0.25$, and $Y=0.4$.
+
+\section{Answer}
+
+To solve the partial integro-differential equation (PIDE) for the up-and-out call (UOC) option using an explicit-implicit finite difference scheme, we need to discretize the equation and implement the numerical method.
+
+As given before, the PIDE for the option price \( w(x, \tau) \) is:
+
+\[
+\frac{\partial w}{\partial \tau}(x, \tau)-(r-q) \frac{\partial w}{\partial x}(x, \tau)+r w(x, \tau) 
+- \int_{-\infty}^{\infty}\left[w(x+y, \tau)-w(x, \tau)-\frac{\partial w}{\partial x}(x, \tau)\left(e^{y}-1\right)\right] k(y) d y=0
+\]
+
+and here \( x = \ln(S) \), \( \tau = T - t \).
+
+\( k(y) \) is the Levy density given by:
+
+\[
+k(y)=\frac{e^{-\lambda_{p} y}}{\nu y^{1+Y}} \mathbf{1}_{y>0}+\frac{e^{-\lambda_{n}|y|}}{\nu|y|^{1+Y}} \mathbf{1}_{y<0}
+\]
+
+with:
+\[
+\lambda_{p}=\left(\frac{\theta^{2}}{\sigma^{4}}+\frac{2}{\sigma^{2} \nu}\right)^{\frac{1}{2}}-\frac{\theta}{\sigma^{2}}, \quad \lambda_{n}=\left(\frac{\theta^{2}}{\sigma^{4}}+\frac{2}{\sigma^{2} \nu}\right)^{\frac{1}{2}}+\frac{\theta}{\sigma^{2}}
+\]
+
+The initial condition is:
+\[
+w(x, 0) = \left(e^{x} - K\right)^{+}
+\]
+
+The boundary conditions are:
+\[
+w(x_{0}, \tau) = 0, \quad w(x_{N}, \tau) = w(B, \tau) = 0 \quad \forall \tau
+\]
+
+
+We discretize the domain \( x \in [x_{\text{min}}, x_{\text{max}}] \) and \( \tau \in [0, T] \) into a grid:
+
+\begin{itemize}
+	\item \( x_i = x_{\text{min}} + i \Delta x \) for \( i = 0, 1, \dots, N \), where \( \Delta x = \frac{x_{\text{max}} - x_{\text{min}}}{N} \)
+	\item \( \tau_j = j \Delta \tau \) for \( j = 0, 1, \dots, M \), where \( \Delta \tau = \frac{T}{M} \)
+\end{itemize}
+
+Let \( w_i^j = w(x_i, \tau_j) \). Then we use an explicit-implicit scheme, the explicit part will handle the integral term (jump component), and the implicit part handles the diffusion and drift terms.
+
+The implicit discretization of the diffusion and drift terms is:
+
+\[
+\frac{w_i^{j+1} - w_i^j}{\Delta \tau} - (r - q) \frac{w_{i+1}^{j+1} - w_{i-1}^{j+1}}{2 \Delta x} + r w_i^{j+1} = 0
+\]
+
+This can be rewritten as:
+
+\[
+w_i^{j+1} - \frac{\Delta \tau}{2 \Delta x} (r - q) (w_{i+1}^{j+1} - w_{i-1}^{j+1}) + r \Delta \tau w_i^{j+1} = w_i^j
+\]
+
+The integral term is discretized explicitly:
+
+\[
+\int_{-\infty}^{\infty} \left[w(x+y, \tau) - w(x, \tau) - \frac{\partial w}{\partial x}(x, \tau) (e^y - 1)\right] k(y) dy
+\]
+
+Approximate the integral using a quadrature method (e.g., trapezoidal rule) and evaluate it at time \( \tau_j \):
+
+\[
+\sum_{k=-M}^{M} \left[w_{i+k}^j - w_i^j - \frac{w_{i+1}^j - w_{i-1}^j}{2 \Delta x} (e^{y_k} - 1)\right] k(y_k) \Delta y
+\]
+
+where \( y_k = k \Delta y \).
+
+The boundary conditions are:
+
+\begin{itemize}
+	\item At \( x = x_0 \) and \( x = x_N \), set \( w_0^j = w_N^j = 0 \) for all \( j \)
+	\item At \( x = \ln(B) \), set \( w(B, \tau) = 0 \)
+\end{itemize}
+
+
+Then we need to initialize the grid; set \( x_{\text{min}} = \ln(S_{\text{min}}) \), \( x_{\text{max}} = \ln(S_{\text{max}}) \), where \( S_{\text{min}} \) and \( S_{\text{max}} \) are chosen to cover the range of interest. Here $x_{\text{min}}$ and $x_{\text{max}}$ define the spatial domain. The upper limit is the barrier in log-space; the lower limit is set far below the spot to capture deep OTM behavior. And $dx$ and $dt$ are the step sizes for space and time.
+
+Then we get implicit PDE by discretizing the log-transformed PDE:
+\begin{itemize}
+	\item $\mu$ effective drift in log-space
+	\item $\alpha,\beta$: coefficients for the second and first derivatives
+	\item $Bl,Bu$: off-diagonal (left and right) terms in the tridiagonal system
+	\item $Bd$: diagonal term, which includes discounting and diffusion
+\end{itemize}
+
+Then compute the integral term, we can get the lower, main, and upper diagonals of the tridiagonal matrix.
+
+Then get the explicit integral term from the jump process, and apply the barrier conditions, where \texttt{W[j, 0] = 0}: lower price boundary (zero option value) and \texttt{W[j, N\textunderscore x] = 0} is the barrier condition, which will be knocked out if price reaches $S=B$. After solving the system back to $t=0$, the final row holds the option values across all $x$, and we can interpolot between nearby values to get the UOC option premium for \( S_0 = 1900 \).
+
+We are given parameters as \( S_0 = 1900 \), \( K = 2000 \), \( B = 2200 \), \( r = 0.25\% \), \( q = 1.5\% \), \( T = 0.5 \) year, \( \sigma = 25\% \), \( \nu = 0.31 \), \( \theta = -0.25 \), \( Y = 0.4 \). And we can plug them into the code to get the result. 
+
+The python code is given as below:
+
+\begin{lstlisting}
+     import numpy as np
+     import matplotlib.pyplot as plt
+     from scipy.interpolate import interp1d
+     from scipy.linalg import solve_banded
+     
+     # Parameters as given in the question
+     S0 = 1900
+     K = 2000
+     B = 2200
+     r = 0.0025
+     q = 0.015
+     sigma = 0.25
+     nu = 0.31
+     T = 0.5
+     
+     # Grid settings
+     N_x = 200
+     N_t = 500
+     x_max = np.log(B)
+     x_min = np.log(100)  # low enough to approximate zero
+     dx = (x_max - x_min) / N_x
+     dt = T / N_t
+     
+     x = np.linspace(x_min, x_max, N_x + 1)
+     S = np.exp(x)
+     
+     # Initial condition
+     w = np.maximum(S - K, 0)
+     
+     # Coefficients for finite difference
+     mu = r - q - 0.5 * sigma**2
+     alpha = sigma**2 / (2 * dx**2)
+     beta = mu / (2 * dx)
+     
+     Bl = dt * (alpha - beta)
+     Bu = dt * (alpha + beta)
+     Bd = 1 + dt * (r + 2 * alpha)
+     
+     #  Tridiagonal matrix coefficients
+     lower = -Bl * np.ones(N_x - 1)
+     diag = Bd * np.ones(N_x - 1)
+     upper = -Bu * np.ones(N_x - 1)
+     
+     #  Preallocate the solution matrix 
+     W = np.zeros((N_t + 1, N_x + 1))
+     W[0, :] = w.copy()
+     
+     #  Dummy jump term (explicit) 
+     R = np.zeros(N_x - 1)
+     
+     # Time stepping
+     for j in range(1, N_t + 1):
+     rhs = W[j - 1, 1:N_x] + dt / nu * R
+     ab = np.zeros((3, N_x - 1))
+     ab[0, 1:] = upper[:-1]
+     ab[1, :] = diag
+     ab[2, :-1] = lower[1:]
+     W[j, 1:N_x] = solve_banded((1, 1), ab, rhs)
+     
+     # Boundary and barrier condition
+     W[j, 0] = 0
+     W[j, N_x] = 0  # Barrier at log(B)
+     
+     # Interpolation at S0
+     interp_func = interp1d(x, W[-1, :])
+     premium = float(interp_func(np.log(S0)))
+     print(f"{premium:.6f}")
+     
+     # Plot the UOC Option Value and Underlying Price
+     plt.figure(figsize=(10, 6))
+     plt.plot(S, W[-1, :], label='UOC Option Value at t=0', color='orange')
+     plt.axvline(B, color='r', linestyle='--', label='Barrier (Knock-out)')
+     plt.axvline(K, color='g', linestyle=':', label='Strike')
+     plt.axvline(S0, color='b', linestyle='-.', label='Spot Price')
+     plt.xlabel('Underlying Asset Price (S)')
+     plt.ylabel('Option Value')
+     plt.grid(True)
+     plt.legend()
+     plt.tight_layout()
+     plt.show()
+\end{lstlisting}
+
+
+And the printout is:
+
+\begin{minipage}{\linewidth}
+	\begin{Verbatim}
+     3.918706
+	\end{Verbatim}
+\end{minipage}
+
+The three prices with the UOC Option Value can be plotted as below:
+
+\includegraphics[max width=0.8\textwidth, center]{plot}
+\captionof{figure}{UOC Option Value and Underlying Price}
+
+\end{document}
