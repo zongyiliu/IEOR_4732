@@ -1,0 +1,909 @@
+\documentclass[letterpaper]{article} 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage[dvipsnames]{xcolor}
+\colorlet{LightRubineRed}{RubineRed!70}
+\colorlet{Mycolor1}{green!10!orange}
+\definecolor{Mycolor2}{HTML}{00F9DE}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{lipsum}
+\usepackage{algpseudocode}
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage[export]{adjustbox}
+\graphicspath{ {./images/} }
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{ctex}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{tcolorbox}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{pifont} 
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref} 
+\newcommand{\cmark}{\textcolor{green!60!black}{\ding{51}}} % ✓
+\newcommand{\xmark}{\textcolor{red}{\ding{55}}}    
+\usepackage{xcolor} % For custom colors
+\lstset{
+	language=Python,                % Choose the language (e.g., Python, C, R)
+	basicstyle=\ttfamily\small, % Font size and type
+	keywordstyle=\color{blue},  % Keywords color
+	commentstyle=\color{gray},  % Comments color
+	stringstyle=\color{red},    % String color
+	numbers=left,               % Line numbers
+	numberstyle=\tiny\color{gray}, % Line number style
+	stepnumber=1,               % Numbering step
+	breaklines=true,            % Auto line break
+	backgroundcolor=\color{black!5}, % Light gray background
+	frame=single,               % Frame around the code
+}
+\usepackage{float}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+	\usepackage[]{amssymb} %gives us the character \varnothing
+	
+	\title{Lecture 3, IEOR 4732\\
+		\small{Finite Differences\\有限差分法
+	}}
+	\author{Zongyi Liu}
+	\date{Thu, Mar 27, 2025}
+	\begin{document}
+		\maketitle
+		\tableofcontents
+
+\section{日程 (Agenda)}
+\begin{itemize}
+  \item 泰勒展開
+  \item 有限差分法引入
+  \begin{itemize}
+  \item 顯性 (explicit), 隱性 (implicit), C-N 法 以及多步格式 (multi-step schemes)
+  \item 穩定性分析 (stability analysis)
+\end{itemize}
+  \item 使用有限差分法對衍生品估計
+  \item 應用
+    \begin{itemize}
+  \item 為各種衍生品, 可轉換債券, 員工股票期權等定價
+\item 首次穿越時間 (first passage time)
+\item 平滑處理
+\end{itemize}
+\end{itemize}
+
+\section{泰勒展開 (Taylor Expansion)}
+
+\textbf{Definition}
+
+在 $x=a$ 附近的 $f \in C^{\infty}$  
+
+$$
+\begin{aligned}
+f(x) & =f(a)+(x-a) f^{(1)}(a)+\frac{(x-a)^{2}}{2!} f^{(2)}(a) +\frac{(x-a)^{3}}{3!} f^{(3)}(a)+\ldots \\
+& =\sum_{n=0}^{\infty} \frac{(x-a)^{n}}{n!} f^{(n)}(a)
+\end{aligned}
+$$
+
+$f \in C^{k+1}$ near $x=a$
+
+\[
+f(x) = f(a) + (x - a) f^{(1)}(a) + \frac{(x - a)^2}{2!} f^{(2)}(a) + \cdots + \frac{(x - a)^k}{k!} f^{(k)}(a)
+\]
+
+\[
+{\quad\quad\quad + \frac{(x - a)^{k+1}}{(k+1)!} f^{(k+1)}(\xi)}
+\]
+
+對於一些 $\xi \in(x, a)$\\
+最後一個項, 即下面單獨這個, 本稱作 remainder, 且它被寫作 Landau notation:  $O\left((x-a)^{k+1}\right)$.
+
+\subsection{導數估值 (Derivative Approximation)}
+\textbf{案例: 一階導的向前和向後的差分近似 (Forward and Backward Difference Approximation of 1st Derivative)}
+
+$f \in C^{2} \quad f^{(1)}=?$
+
+$$
+\begin{aligned}
+& f(x+h)=f(x)+h f^{(1)}(x)+\frac{h^{2}}{2!} f^{(2)}\left(\xi_{1}\right) \\
+& f(x-h)=f(x)-h f^{(1)}(x)+\frac{h^{2}}{2!} f^{(2)}\left(\xi_{2}\right) \\
+& f^{(1)}(x)=\frac{f(x+h)-f(x)}{h}-\frac{h}{2} f^{(2)}\left(\xi_{1}\right) \\
+& \approx \frac{f(x+h)-f(x)}{h} \text { w/ } O(h) \quad \leftarrow \text { forward } \\
+& f^{(1)}(x)=\frac{f(x)-f(x-h)}{h}+\frac{h}{2} f^{(2)}\left(\xi_{2}\right) \\
+& \approx \frac{f(x)-f(x-h)}{h} \text { w/ } O(h) \quad \leftarrow \text { backward }
+\end{aligned}
+$$
+
+\textbf{案例: 一階導的中央差分近似(Central Difference Approximation of 1st Derivative)}
+
+$f \in C^{3} \quad f^{(1)}=?$
+
+$$
+\begin{gathered}
+f(x+h)=f(x)+h f^{(1)}(x)+\frac{h^{2}}{2!} f^{(2)}(x)+\frac{h^{3}}{3!} f^{(3)}\left(\xi_{3}\right) \\
+f(x-h)=f(x)-h f^{(1)}(x)+\frac{h^{2}}{2!} f^{(2)}(x)-\frac{h^{3}}{2!} f^{(3)}\left(\xi_{4}\right) \\
+f(x+h)-f(x-h)=2 h f^{(1)}(x)+\frac{h^{3}}{3!} f^{(3)}\left(\xi_{3}\right)+\frac{h^{3}}{3!} f^{(3)}\left(\xi_{4}\right) \\
+=2 h f^{(1)}(x)+O\left(h^{3}\right)
+\end{gathered}
+$$
+
+在這裡 central method 最好, 這個其实我之前學過, 在572那個.
+
+$$
+\begin{aligned}
+f^{(1)}(x) & =\frac{f(x+h)-f(x-h)}{2 h}+O\left(h^{2}\right) \\
+& \approx \frac{f(x+h)-f(x-h)}{2 h} \text { w/ } O\left(h^{2}\right)
+\end{aligned}
+$$
+
+\textbf{案例: 二階導的中央差分近似(Central Difference Approximation of 2nd Derivative)}
+
+$f \in C^{4} \quad f^{(2)}=?$
+
+$$
+\begin{gathered}
+f(x+h)=f(x)+h f^{(1)}(x)+\frac{h^{2}}{2!} f^{(2)}(x)+\frac{h^{3}}{3!} f^{(3)}(x)+\frac{h^{4}}{4!} f^{(4)}\left(\xi_{5}\right) \\
+f(x-h)=f(x)-h f^{(1)}(x)+\frac{h^{2}}{2!} f^{(2)}(x)-\frac{h^{3}}{3!} f^{(3)}(x)+\frac{h^{4}}{4!} f^{(4)}\left(\xi_{6}\right) \\
+f(x+h)+f(x-h)=2 f(x)+2 \frac{h^{2}}{2!} f^{(2)}(x)+\frac{h^{4}}{4!} f^{(4)}\left(\xi_{5}\right)+\frac{h^{4}}{4!} f^{(4)}\left(\xi_{6}\right) \\
+f^{(2)}(x)=\frac{f(x-h)-2 f(x)+f(x+h)}{h^{2}}+O\left(h^{2}\right)
+\end{gathered}
+$$
+
+\section{離散化 (Discretization)}
+\subsection{熱傳導方程 (Heat Equation)}
+start from heat equation (why?)
+
+因為它只涉及一階時間導數和二階空間導數, 易於手工導出顯式與隱式差分格式. 
+
+$$
+u_{\tau}-\kappa u_{x x}=0
+$$
+
+for $a \leq x \leq b$ and $0 \leq \tau \leq T$
+
+$$
+\begin{aligned}
+& u(x, 0) =f(x)\\
+& u(a, \tau)=g(\tau) \\
+& u(b, \tau)=h(\tau)
+\end{aligned}
+$$
+
+\begin{itemize}
+  \item 使一個微分算子 (differential operator) 變為了一個差分方程 (difference equation).
+  \item 一個連續的domain $D=\{a \leq x \leq b ; 0 \leq \tau \leq T\}$ 離散化為了 grid.
+\end{itemize}
+
+\subsection{網格 (The Grid)}
+
+\includegraphics[max width=0.5\textwidth, center]{grid}
+\[
+\bar{D} = \left\{
+\begin{aligned}
+	&x_j = a + (j - 1)\Delta x, &\quad \Delta x = \frac{b - a}{N}, &\quad j = 1, \dots, N+1 \\
+	&\tau_k = 0 + (k - 1)\Delta \tau, &\quad \Delta \tau = \frac{T - 0}{M}, &\quad k = 1, \dots, M+1
+\end{aligned}
+\right\}
+\]
+
+然後繼續執行離散化的微分算子
+
+$$
+\mathcal{L}(u)=u_{\tau}-\kappa u_{x x}=0
+$$
+
+在此之前我們要先使:
+
+\begin{itemize}
+  \item $u_{j, k}$ 成為 $u\left(x=x_{j}, \tau=\tau_{k}\right)$ 的實際數值
+  \item $U_{j, k}$ 成為其離散近似
+\end{itemize}
+
+\section{有限差分法模組 (Finite Differences Schemes)}
+\subsection{顯式離散 (Explicit Discretization)}
+
+\includegraphics[max width=0.6\textwidth, center]{2025_03_21_f723913b4d404a19b8e0g-11}
+
+\begin{itemize}
+	\item 參考點 (reference point) $\left(x_{j}, \tau_{k}\right)$
+	\item 向前 (forward) $\frac{\partial u\left(x_{j}, \tau_{k}\right)}{\partial \tau}$
+	\item 中央 (central) $\frac{\partial^{2} u\left(x_{j}, \tau_{k}\right)}{\partial x^{2}}$
+\end{itemize}
+
+對於第一個項的向前差分近似: 
+
+\[
+\frac{\partial u(x_j, \tau_k)}{\partial \tau}
+= \frac{u_{j,k+1} - u_{j,k}}{\Delta \tau} + \mathcal{O}(\Delta \tau)
+\]
+
+對於第二個項的中央差分近似: 
+
+\[
+\frac{\partial^2 u(x_j, \tau_k)}{\partial x^2}
+= \frac{u_{j-1,k} - 2u_{j,k} + u_{j+1,k}}{\Delta x^2} + \mathcal{O}(\Delta x^2)
+\]
+
+\[
+u_\tau(x_j, \tau_k) - \kappa u_{xx}(x_j, \tau_k) = 0
+\]
+
+\[
+\frac{u_{j,k+1} - u_{j,k}}{\Delta \tau}
+- \kappa \frac{u_{j-1,k} - 2u_{j,k} + u_{j+1,k}}{\Delta x^2}
+= \mathcal{O}(\Delta x^2) + \mathcal{O}(\Delta \tau)
+\]
+
+使用 \( u_{j,k} \) 的近似值可得:
+
+\[
+\frac{U_{j,k+1} - U_{j,k}}{\Delta \tau}
+- \kappa \frac{U_{j-1,k} - 2U_{j,k} + U_{j+1,k}}{\Delta x^2} = 0
+\]
+
+重新調整順序: 
+
+\[
+U_{j,k+1} - U_{j,k}
+- \boxed{
+	\frac{\kappa \Delta \tau}{\Delta x^2}
+	\left( U_{j-1,k} - 2U_{j,k} + U_{j+1,k} \right)
+} = 0
+\]
+
+給定 \( \rho = \dfrac{\kappa \Delta \tau}{\Delta x^2} \), 則有:
+
+\[
+U_{j,k+1}
+= \rho U_{j-1,k}
++ (1 - 2\rho) U_{j,k}
++ \rho U_{j+1,k}
+\qquad \text{for } \quad 2 \leq j \leq N, \quad 1 \leq k \leq M
+\]
+
+\vspace{1em}
+\[
+j = 1 \quad \text{and} \quad j = N + 1 \quad \text{分別對應邊界條件}
+\]
+
+
+$$
+\begin{array}{r}
+u\left(x_{1}, \tau_{k}\right)=g\left(\tau_{k}\right) \\
+u\left(x_{N+1}, \tau_{k}\right)=h\left(\tau_{k}\right) \\
+u\left(x_{j}, \tau_{1}\right)=f\left(x_{j}\right)=f_{j}
+\end{array}
+$$
+
+對於$\tau_{k}=(k-1) \Delta \tau$的近似PDE解為:
+
+$$
+\mathbf{U}_{k}=\left(\begin{array}{c}
+U_{2, k} \\
+U_{3, k} \\
+\vdots \\
+U_{N, k}^{2}
+\end{array}\right)
+$$
+
+使用矩陣格式則可以寫作: 
+
+$$
+\mathbf{U}_{k+1}=A_{\text {Explicit }} \mathbf{U}_{k}+\rho\left(\begin{array}{c}
+U_{1, k} \\
+0 \\
+\vdots \\
+0 \\
+U_{N+1, k}
+\end{array}\right)
+$$
+
+此處有:
+
+\[
+A_{\text{Explicit}} =
+\begin{pmatrix}
+	1 - 2\rho & \rho         &              &              & \\
+	\rho      & 1 - 2\rho    & \rho         &              & \\
+	& \ddots       & \ddots       & \ddots       & \\
+	&              & \rho         & 1 - 2\rho    & \rho \\
+	&              &              & \rho         & 1 - 2\rho
+\end{pmatrix}
+\]
+
+它的初始條件為:
+
+$$
+\mathbf{U}_{1}=\left(\begin{array}{c}
+U_{2,1} \\
+U_{3,1} \\
+\vdots \\
+U_{N, 1}
+\end{array}\right)=\left(\begin{array}{c}
+f_{2} \\
+f_{3} \\
+\vdots \\
+f_{N}
+\end{array}\right)
+$$
+
+\subsection{隱式離散 (Implicit Discretization)}
+\begin{center}
+\includegraphics[max width=0.6\textwidth]{2025_03_21_f723913b4d404a19b8e0g-17}
+\end{center}
+
+\begin{itemize}
+	\item 參考點 (reference point) \( (x_j, \tau_{k+1}) \)
+	\item 向後 (backward) $\frac{\partial u(x_j, \tau_{k+1})}{\partial \tau}$
+	\item 中央 (central) $\frac{\partial^2 u(x_j, \tau_{k+1})}{\partial x^2}$
+\end{itemize}
+
+
+對於第一個項的向後差分近似:
+
+$$
+\frac{\partial u\left(x_{j}, \tau_{k+1}\right)}{\partial \tau}=\frac{u_{j, k+1}-u_{j, k}}{\Delta \tau}+O(\Delta \tau)
+$$
+
+對於第二個項的中央差分近似:
+
+$$
+\frac{\partial^{2} u\left(x_{j}, \tau_{k+1}\right)}{\partial x^{2}}=\frac{u_{j-1, k+1}-2 u_{j, k+1}+u_{j+1, k+1}}{\Delta x^{2}}+O\left(\Delta x^{2}\right)
+$$
+
+$$
+u_{\tau}\left(x_{j}, \tau_{k+1}\right)-\kappa u_{x x}\left(x_{j}, \tau_{k+1}\right)=0
+$$
+
+$$
+\frac{u_{j, k+1}-u_{j, k}}{\Delta \tau}-\kappa \frac{u_{j-1, k+1}-2 u_{j, k+1}+u_{j+1, k+1}}{\Delta x^{2}}=O\left(\Delta x^{2}\right)+O(\Delta \tau)
+$$
+
+使用 $u_{j, k}$ 的近似值可得:
+
+\[
+\frac{U_{j,k+1} - U_{j,k}}{\Delta \tau}
+- \kappa \cdot \frac{U_{j-1,k+1} - 2U_{j,k+1} + U_{j+1,k+1}}{\Delta x^2} = 0
+\]
+
+重新調整順序:
+
+\[
+U_{j,k+1} - U_{j,k}
+- \boxed{
+	\frac{\kappa \Delta \tau}{\Delta x^2}
+	\left( U_{j-1,k+1} - 2U_{j,k+1} + U_{j+1,k+1} \right)
+} = 0
+\]
+
+{設} \( \rho = \dfrac{\kappa \Delta \tau}{\Delta x^2} \), 則:
+
+\[
+- \rho U_{j-1,k+1}
++ (1 + 2\rho) U_{j,k+1}
+- \rho U_{j+1,k+1}
+= U_{j,k}
+\quad \text{for } \quad 2 \leq j \leq N, \quad 1 \leq k \leq M
+\]
+
+\vspace{1em}
+
+\[
+j = 1 \quad \text{和} \quad j = N+1 \quad \text{對應邊界條件}
+\]
+
+\[
+u(x_1, \tau_{k+1}) = g(\tau_{k+1})
+\]
+\[
+u(x_{N+1}, \tau_{k+1}) = h(\tau_{k+1})
+\]
+\[
+u(x_j, \tau_1) = u_{j,1} = f(x_j) = f_j
+\]
+
+近似的 PDE solution $\tau=k \Delta \tau$ 以矩陣格式寫, 則為:
+
+$$
+A_{\text {Implicit }} \mathbf{U}_{k+1}=\mathbf{U}_{k}+\rho\left(\begin{array}{c}
+U_{1, k+1} \\
+0 \\
+\vdots \\
+0 \\
+U_{N+1, k+1}
+\end{array}\right)
+$$
+
+此處有:
+
+\[
+A_{\text{Implicit}} =
+\begin{pmatrix}
+	1 + 2\rho & -\rho      &               &               &        \\
+	-\rho     & 1 + 2\rho  & -\rho         &               &        \\
+	& \ddots     & \ddots        & \ddots        &        \\
+	&            & -\rho         & 1 + 2\rho     & -\rho  \\
+	&            &               & -\rho         & 1 + 2\rho
+\end{pmatrix}
+\]
+
+\subsubsection{算法 (Algorithm)}
+
+$$
+\mathbf{U}_{1}=\left(\begin{array}{c}
+U_{2,1} \\
+U_{3,1} \\
+\vdots \\
+U_{N, 1}
+\end{array}\right)=\left(\begin{array}{c}
+f_{2} \\
+f_{3} \\
+\vdots\\
+f_{N}
+\end{array}\right)
+$$
+
+對於 $k=1: M$\\
+
+\[
+A_{\text{Implicit}} U_{k+1} = U_k + \rho 
+\begin{pmatrix}
+	U_{1,k+1} \\
+	0 \\
+	\vdots \\
+	0 \\
+	U_{N+1,k+1}
+\end{pmatrix}
+\]
+
+End
+
+在時間 $T=\tau_{M+1}$ 的最終解為:
+
+$$
+U_{M+1} {=}\left(\begin{array}{c}
+U_{2, M+1 }\\
+U_{3, M+1} \\
+\vdots \\
+U_{N, M+1}
+\end{array}\right)
+$$
+
+可見於書的 106頁, 三對角矩陣解法 (tridiagnoal matrix solver)
+
+\subsection{克蘭克-尼柯爾森方法 (Crank-Nicolson)}
+\begin{center}
+\includegraphics[max width=0.6\textwidth]{2025_03_21_f723913b4d404a19b8e0g-24}
+\end{center}
+
+\begin{itemize}
+	\item 參考點 (reference point): \( (x_j, \tau_{k + \frac{1}{2}}) \)
+	\item 中央 (central): $
+	\frac{\partial u(x_j, \tau_{k + \frac{1}{2}})}{\partial \tau}$
+	\item 中央 (central):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    $\frac{\partial^2 u(x_j, \tau_{k + \frac{1}{2}})}{\partial x^2}$
+\end{itemize}
+
+\[
+\left( A_{\text{Implicit}} + I \right) U_{k+1}
+= \left( A_{\text{Explicit}} + I \right) U_k
++ \rho
+\begin{pmatrix}
+	U_{1,k} + U_{1,k+1} \\
+	0 \\
+	\vdots \\
+	0 \\
+	U_{N+1,k} + U_{N+1,k+1}
+\end{pmatrix}
+\]
+
+\begin{itemize}
+  \item  $O\left(\Delta x^{2}\right)+O\left(\Delta \tau^{2}\right)$ 的階.
+  \item 注意添加隱式和顯式給出的結果是一樣的. 
+\end{itemize}
+
+\subsection{多格式組 (Multi-step Scheme)}
+
+\includegraphics[max width=0.6\textwidth, center]{2025_03_21_f723913b4d404a19b8e0g-26}
+
+\begin{itemize}
+	\item 參考點 (reference point): $\left(x_{j}, \tau_{k+2}\right)$
+	\item 向後的二階 (backward 2nd order): $\frac{\partial u\left(x_{j}, \tau_{k+2}\right)}{\partial \tau}$
+	\item 中央 (central): $\frac{\partial^{2} u\left(x_{j}, \tau_{k+2}\right)}{\partial x^{2}}$
+\end{itemize}
+
+對於第一個項的後向差分近似:
+
+\[
+\frac{\partial u(x_j, \tau_{k+2})}{\partial \tau}
+= \frac{u_{j,k} - 4u_{j,k+1} + 3u_{j,k+2}}{2\Delta \tau}
++ \mathcal{O}((\Delta \tau)^2)
+\]
+
+對於第二個項的中央差分近似:
+
+\[
+\frac{\partial^2 u(x_j, \tau_{k+2})}{\partial x^2}
+= \frac{u_{j-1,k+2} - 2u_{j,k+2} + u_{j+1,k+2}}{\Delta x^2}
++ \mathcal{O}((\Delta x)^2)
+\]
+
+
+\[
+u_\tau(x_j, \tau_{k+2}) - \kappa u_{xx}(x_j, \tau_{k+2}) = 0
+\]
+
+\[
+\frac{u_{j,k} - 4u_{j,k+1} + 3u_{j,k+2}}{2\Delta \tau}
+- \kappa \frac{u_{j-1,k+2} - 2u_{j,k+2} + u_{j+1,k+2}}{\Delta x^2}
+= 0
+\]
+
+\[
+\frac{U_{j,k} - 4U_{j,k+1} + 3U_{j,k+2}}{2\Delta \tau}
+- \kappa \frac{U_{j-1,k+2} - 2U_{j,k+2} + U_{j+1,k+2}}{(\Delta x)^2}
++ \mathcal{O}((\Delta x)^2) + \mathcal{O}((\Delta \tau)^2) = 0
+\]
+
+\[
+\frac{U_{j,k} - 4U_{j,k+1} + 3U_{j,k+2}}{2\Delta \tau}
+- \kappa \frac{U_{j-1,k+2} - 2U_{j,k+2} + U_{j+1,k+2}}{(\Delta x)^2} = 0
+\]
+
+\[
+\text{order of } \mathcal{O}((\Delta x)^2) + \mathcal{O}((\Delta \tau)^2)
+\]
+
+重新排序:
+
+\[
+U_{j,k} - 4U_{j,k+1} + 3U_{j,k+2}
+- \frac{2\kappa \Delta \tau}{\Delta x^2}
+\left( U_{j-1,k+2} - 2U_{j,k+2} + U_{j+1,k+2} \right) = 0
+\]
+
+設:
+\[
+\hat{\rho} = \frac{2\kappa \Delta \tau}{\Delta x^2}
+\]
+
+代入得：
+\[
+- \hat{\rho} U_{j-1,k+2}
++ (3 + 2\hat{\rho}) U_{j,k+2}
+- \hat{\rho} U_{j+1,k+2}
+= - U_{j,k} + 4U_{j,k+1}
+\]
+
+\[
+\text{for } 2 \leq j \leq N, \quad 1 \leq k \leq M - 1
+\]
+
+
+\[
+A_{\text{MS}} \, U_{k+2} = -U_k + 4U_{k+1}
++ \hat{\rho}
+\begin{pmatrix}
+	U_{1,k+2} \\
+	0 \\
+	\vdots \\
+	0 \\
+	U_{N+1,k+1}
+\end{pmatrix}
+\]
+
+
+\text{where}
+
+\[
+A_{\text{MS}} =
+\begin{pmatrix}
+	3 + 2\hat{\rho} & -\hat{\rho} & 0 & \cdots & 0 \\
+	-\hat{\rho} & 3 + 2\hat{\rho} & -\hat{\rho} & \ddots & \vdots \\
+	0 & -\hat{\rho} & 3 + 2\hat{\rho} & \ddots & 0 \\
+	\vdots & \ddots & \ddots & \ddots & -\hat{\rho} \\
+	0 & \cdots & 0 & -\hat{\rho} & 3 + 2\hat{\rho}
+\end{pmatrix}
+\]
+
+
+
+\section{穩定性分析 (Stability Analysis)}
+\subsection{基礎 (Basics)}
+\begin{itemize}
+  \item 收斂的 (convergent): 一個差分模組是收斂的, 如果當 $\Delta \tau$ 和 $\Delta x$ 趨向於0, 在定義域 (domain) 的每一個點上, 有限差分的解收斂於實際的數值. 
+  \item 連貫的 (consistent): 區域截斷誤差 (local truncation error), 趨向於0, 當 $\Delta \tau$ 和 $\Delta x$ 趨向於0 (由此引發 Taylor's theorem).
+  \item 穩定的 (stable): $\left|U_{i j} -u_{i j}\right|<\delta$, 當 $\Delta \tau$ 和 $\Delta x$ 趨向於0時. 
+\end{itemize}
+
+\textbf{分析}
+\begin{itemize}
+  \item 連貫性: 依據泰勒. 
+  \item 穩定性: 不容易
+  \begin{itemize}
+  \item 特徵值分析
+  \item 傅立葉分析
+  \item 計算受影響域 (computing the domain of dependence)
+\end{itemize}
+  \item  Lax-Richtmeyer Equivalence Theorem 指出, 一個連續的有限差分模組是收斂的,  同時一個連貫的 (consistent) 有限差分格式是收斂的, 當且僅當它是穩定的 (stable). 如果我們指出它是穩定的, 則我們展示了它在問題的定義域上任何一處都是收斂的.
+  \item 一個穩定的格式總是收斂於真正的 PDE 解. 
+\end{itemize}
+
+\subsection{案例 (Example)}
+$$
+\mathcal{L}(u)=u_{\tau}-\kappa u_{x x}=0
+$$
+
+無損於一般性 (WLOG):
+
+$$
+\begin{aligned}
+& u(a, \tau)=0 \\
+& u(b, \tau)=0
+\end{aligned}
+$$
+
+$$
+U_{k+1}=B U_{k}
+$$
+
+三個格式:
+
+$$
+\begin{array}{ll}
+B=A_{\text {Explicit }} & \text { 顯性 } \\
+B=A_{\text {Implicit }}^{-1} & \text { 隱性 } \\
+B=\left(A_{\text {Implicit }}+I\right)^{-1}\left(A_{\text {Explicit }}+I\right) & \text { 克蘭克-尼科爾森}
+\end{array}
+$$
+
+穩定性條件的本質在於：任何初始誤差被數值解所放大的程度應該有一個上限。
+
+設 $U_{k}$ 為線性系統的真實解，$\hat{U}_{k}$ 為計算出的解。
+
+定義局部誤差如下：
+
+
+$$
+e_{k} \equiv \hat{U}_{k}-U_{k}
+$$
+
+$$
+\begin{aligned}
+B e_{k} & =B\left(\hat{U}_{k}-U_{k}\right) \\
+& =\hat{U}_{k+1}-U_{k}+1 \\
+& =e_{k+1}
+\end{aligned}
+$$
+
+通過推斷:
+
+
+\begin{equation*}
+e_{k+1}=B^{k} e_{1} \tag{1}
+\end{equation*}
+
+
+為了使其穩定:
+
+
+\begin{equation*}
+B^{k} e_{1} \rightarrow 0 \quad \text { for } \quad k \rightarrow \infty \tag{2}
+\end{equation*}
+
+設 $\lambda_{i}$ 為 $A$ 的特徵值（e-value）。則 $A$ 的譜半徑（spectral radius）為：
+
+$$
+\rho(A)=\max _{i}\left|\lambda_{i}\right|
+$$
+
+它與矩陣冪次收斂性的關係密切.
+
+\begin{tcolorbox}[width=\linewidth, colframe=OliveGreen, title=引理]
+	設 $A \in \mathbb{R}^{n \times n}$，$\rho(A)$ 為其譜半徑。則：
+	
+	$$
+	\lim _{k \rightarrow \infty} A^{k}=0 \text { if and only if } \rho(A)<1
+	$$
+	
+	對於一個 $N \times N$ 的三對角矩陣 $B$：
+	
+	$$
+	B=\left(\begin{array}{ccccc}
+		\alpha & \beta & & & \\
+		\gamma & \alpha & \beta & & \\
+		& \ddots & \ddots & \ddots & \\
+		& & \gamma & \alpha & \beta \\
+		& & & \gamma & \alpha
+	\end{array}\right)
+	$$
+	
+	它的特徵值為:
+	
+	$$
+	\lambda_{B}^{i}=\alpha+2 \beta\left(\frac{\gamma}{\beta}\right)^{1 / 2} \cos \left(\frac{i \pi}{N+1}\right) \quad i=1, \ldots, N
+	$$
+\end{tcolorbox}
+
+
+
+\subsection{顯性方法的穩定性 (Stability of the Explicit Scheme)}
+$\alpha = 1 - 2\rho \quad \text{且} \quad \beta = \gamma = \rho，\quad \text{因此其特徵值為}$
+
+
+\[
+\lambda^i_{A_{\text{Explicit}}} = (1 - 2\rho) + 2\rho \cos\left( \frac{i\pi}{N} \right)
+\]
+\[
+= 1 - 2\rho \left( 1 - \cos\left( \frac{i\pi}{N} \right) \right)
+\]
+\[
+= 1 - 4\rho \sin^2\left( \frac{i\pi}{2N} \right)
+\]
+
+\[
+\left| 1 - 4\rho \sin^2\left( \frac{i\pi}{2N} \right) \right| < 1 
+\Rightarrow 
+0 < \rho \sin^2\left( \frac{i\pi}{2N} \right) < \frac{1}{2}
+\Rightarrow
+0 < \rho < \frac{1}{2}
+\]
+
+\bigskip
+
+為了使此格式穩定。由於 \( \rho = \dfrac{\kappa \Delta \tau}{(\Delta x)^2} \)，這意味著：
+
+\[
+0 < \Delta \tau < \frac{(\Delta x)^2}{2\kappa}
+\]
+
+\bigskip
+
+柯朗-弗里德里希-萊維條件 (Courant–Friedrichs–Lewy (CFL) condition), 即條件性穩定指出:
+
+
+$\alpha = 1 + 2\rho$ 且 $\beta = \gamma = -\rho$，因此 $A^{\text{Implicit}}$ 的特徵值為：
+
+$$
+\begin{aligned}
+& \lambda_{A_{\text {Implicit }}}^{i}=(1+2 \rho)+2(-\rho) \cos \left(\frac{i \pi}{N}\right) \\
+& =1+2 \rho\left(1-\cos \left(\frac{i \pi}{N} \right)\right. \\
+& =1+4 \rho \operatorname{sin}^{2}\left(\frac{i \pi}{2 N}\right)
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+& \left|\lambda_{B}^{i}\right|=\left|\frac{1}{1+4 \rho \sin ^{2}\left(\frac{i \pi}{2 N}\right)}\right|<1
+\end{aligned}
+$$
+
+對於所有$i$ (無條件性穩定) 都正確. 
+
+\section{衍生品估值 (Derivative Approximation)}
+\subsection{通過有限差分進行衍生品估值: 廣義情況 (Derivative Approximation by Finite Differences: Generic)}
+對於
+
+$f \in C^{\infty}$
+
+$$
+f(x+i h)=\sum_{n=0}^{\infty} \frac{(i h)^{n}}{n!} f^{(n)}(x)
+$$
+
+$f^{(d)}(x)$ 有 $p$如下的等式:
+
+$$
+f^{(d)}(x)=\sum_{i=i_{i}}^{i_{u}} \hat{c}_{i}^{d} f(x+i h)+O\left(h^{p}\right)
+$$
+
+$\hat{c}_{i}$ 為未知係數，$i_{u}$ 和 $i_{l}$ 分別是我們近似中向前與向後項的數量，乘上 $\dfrac{h^{d}}{d!}$，並定義 $c_{i} = \hat{c}_{i} \dfrac{h^{d}}{d!}$
+
+
+$$
+\frac{h^{d} f^{(d)}(x)}{d!}+O\left(h^{d+p}\right)=\sum_{i=i_{i}}^{i_{u}} c_{i} f(x+i h)
+$$
+
+$$
+\begin{aligned}
+& \frac{h^{d} f^{(d)}(x)}{d!}+O\left(h^{d+p}\right)=\sum_{i=i_{l}}^{i_{u}} c_{i} f(x+i h)
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+& =\sum_{n=0}^{\infty}\left(\sum_{i=i_{l}}^{i_{u}} c_{i} i^{n}\right) \frac{h^{n}}{n!} f^{(n)}(x) \\
+& =\sum_{n=0}^{d+p-1}\left(\sum_{i=i_{l}}^{i_{u}} c_{i} i^{n}\right) \frac{h^{n}}{n!} f^{(n)}(x)+O\left(h^{d+p}\right)
+\end{aligned}
+$$
+
+
+或者等價地:
+
+$$
+f^{(d)}(x)=\frac{d!}{h^{d}} \sum_{n=0}^{d+p-1}\left(\sum_{i=i_{i}}^{i_{u}} c_{i} f^{n}\right)^{n} \frac{h^{n}}{n!} f^{(n)}(x)
+$$
+
+ \href{http://papers.ssrn.com/sol3/papers.cfm?abstract_id=3455397}{此文章},提供了高維情況的擴展. 
+
+\subsection{分析 (Findings and Observations)}
+\begin{itemize}
+	\item 唯一性成立當且僅當我們將約束條件的數量限制為 $d+p$.
+	\item 即 $d+p = i_{u} - i_{l} + 1$.
+	\item 對於向前差分，有 $i_{l} = 0$ 且 $i_{u} = d+p-1$.
+	\item 對於向後差分，有 $i_{l} = -(d+p-1)$ 且 $i_{u} = 0$.
+	\item 對於中央差分，有 $i_{l} = -\frac{1}{2}(d+p-1)$ 且 $i_{u} = \frac{1}{2}(d+p-1)$.
+\end{itemize}
+
+\subsection{案例 (Example)}
+二階三次導數的向前差分. 
+
+\begin{itemize}
+  \item $f^{(3)}(x)$ with $O\left(h^{2}\right)$
+  \item $d=3$ and $p=2$
+  \item $i_{I}=0$ and $i_{u}=4$
+\end{itemize}
+
+$$
+\sum_{i=0}^{4} c_{i} i^{n}= \begin{cases}1 & n=3 \\ 0 & n \neq 3\end{cases}
+$$
+
+$$
+\left[\begin{array}{lllll}
+0^{0} & 1^{0} & 2^{0} & 3^{0} & 4^{0} \\
+0^{1} & 1^{1} & 2^{1} & 3^{1} & 4^{1} \\
+0^{2} & 1^{2} & 2^{2} & 3^{2} & 4^{2} \\
+0^{3} & 1^{3} & 2^{3} & 3^{3} & 4^{3} \\
+0^{4} & 1^{4} & 2^{4} & 3^{4} & 4^{4}
+\end{array}\right]\left[\begin{array}{l}
+c_{0} \\
+c_{1} \\
+c_{2} \\
+c_{3} \\
+c_{4}
+\end{array}\right]=\left[\begin{array}{l}
+0 \\
+0 \\
+0 \\
+1 \\
+0
+\end{array}\right] \Rightarrow\left[\begin{array}{l}
+c_{0} \\
+c_{1} \\
+c_{2} \\
+c_{3} \\
+c_{4}
+\end{array}\right]=\left[\begin{array}{l}
+-5 / 12 \\
+3 / 2 \\
+-2 \\
+-1 / 4
+\end{array}\right]
+$$
+
+
+$$
+\begin{aligned}
+f^{(3)}(x) & =\frac{3!}{h^{3}} \sum_{i=0}^{4} c_{i} f(x+i h)+O\left(h^{2}\right) \\
+& =\frac{-5 f(x)+18 f(x+h)-24 f(x+2 h)+14 f(x+3 h)-3 f(x+4 h)}{2 h^{3}} \\
+& +O\left(h^{2}\right)
+\end{aligned}
+$$
+
+
+\end{document}

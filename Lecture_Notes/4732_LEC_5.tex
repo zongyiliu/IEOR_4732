@@ -1,0 +1,798 @@
+\documentclass[letterpaper]{article} 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{ctex} 
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage[dvipsnames]{xcolor}
+\colorlet{LightRubineRed}{RubineRed!70}
+\colorlet{Mycolor1}{green!10!orange}
+\definecolor{Mycolor2}{HTML}{00F9DE}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{lipsum}
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage[export]{adjustbox}
+\graphicspath{ {./images/} }
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{tcolorbox}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref} 
+\usepackage{xcolor} % For custom colors
+\lstset{
+	language=Python,                % Choose the language (e.g., Python, C, R) 
+	basicstyle=\ttfamily\small, % Font size and type
+	keywordstyle=\color{blue},  % Keywords color
+	commentstyle=\color{gray},  % Comments color
+	stringstyle=\color{red},    % String color
+	numbers=left,               % Line numbers
+	numberstyle=\tiny\color{gray}, % Line number style
+	stepnumber=1,               % Numbering step
+	breaklines=true,            % Auto line break
+	backgroundcolor=\color{black!5}, % Light gray background
+	frame=single,               % Frame around the code
+}
+\usepackage{float}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+	\usepackage[]{amssymb} %gives us the character \varnothing
+	
+	\title{Lecture 5, IEOR 4732\\
+		\small{PIDE\\
+			偏積分微分方程}}
+	\author{Zongyi Liu}
+	\date{Thu, Feb 20, 2025}
+	\begin{document}
+		\maketitle
+		\tableofcontents
+		\section{日程 (Agenda) }
+		\begin{itemize}
+			\item 通過數值解 PIDE 進行衍生品定價
+			\item 顯式-隱式差分格式 (explicit-implicit scheme) 
+			\item 跳躍積分項的數值計算
+			\item 邊界條件的實踐
+			\item 美式期權
+			\item 障礙期權
+			\item 向前 PIDE (Carr-Hirsa 方法) 
+			\item 首次穿越時間 (first passage time) 
+		\end{itemize}
+		
+		\section{PIDE 的推導 (Derivation of the PIDE) }
+		\begin{itemize}
+			\item 假設資產價格 $S_{t}$ 遵循一個 Lévy 過程
+			\item 設函數 $V (S, t) $ 表示衍生性金融商品的價值
+			\item 對半鞅 (semi-martingale)  應用伊藤引理, 可得:
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			& \int_{-\infty}^{+\infty}\left[V\left (S_{t-} e^{y}, t\right) { }-\forall\left (S_{t-}, t\right) -\frac{\partial V}{\partial S}\left (S_{t-}, t\right)  S_{t-}\left (e^{y}-1\right) \right] \nu (d y)  +\frac{\partial V}{\partial t}\left (S_{t}, t\right) + (r-q)  S_{t} \frac{\partial V}{\partial S}\left (S_{t}, t\right) -r V\left (S_{t}, t\right) =0
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item 這個 PIDE 對於任意的萊維密度 (Lévy density)  $\nu (d y) $ 都相當通用.
+		\end{itemize}
+		
+		
+		對於 $\nu (d y) =k (y)  d y$, 我們可得:
+		
+		$$
+		\begin{array}{r}
+			\int_{-\infty}^{\infty}\left[V\left (S_{t-} e^{y}, t\right) -V\left (S_{t-}, t\right)  - \frac{\partial V}{\partial S}\left (S_{t-}, t\right)  S_{t-}\left (e^{y}-1\right) \right] k (y)  d y \\
+			+\frac{\partial V}{\partial t}\left (S_{t}, t\right) + (r-q)  S_{t} \frac{\partial V}{\partial S}\left (S_{t}, t\right) -r V\left (S_{t}, t\right) =0
+		\end{array}
+		$$
+		
+		變量改變為 $x = \ln S$ 和 $\tau = T - t$, 我們得到以下以 $w (x, \tau) $ 為函數的 PIDE：
+		
+		
+		$$
+		\frac{\partial w}{\partial \tau} (x, \tau) - (r-q)  \frac{\partial w}{\partial x_{s}} (x, \tau) +r w (x, \tau) -\int_{-\infty}^{\infty}\left[w (x+y, \tau) -w (x, \tau) -\frac{\partial w}{\partial x_{}}\left (x_{},  \tau\right) \left (e^{y}-1\right) \right] k (y)  d y=0
+		$$
+		
+		注意到:
+		
+		$$
+		\begin{aligned}
+			\frac{\partial^2 w}{\partial x^2} (x, \tau)  - \frac{\partial w}{\partial x} (x, \tau)  &= S^2 \frac{\partial^2 V}{\partial S^2} (S, t)  \\
+			w (x, \tau)  &= V (S, t)  \\
+			\frac{\partial w}{\partial x} (x, \tau)  &= S \frac{\partial V}{\partial S} (S, t)  \\
+			\frac{\partial w}{\partial \tau} (x, \tau)  &= -\frac{\partial V}{\partial t} (S, t)  \\
+			w (x + y, \tau)  &= V (Se^y, It) 
+		\end{aligned}
+		$$
+		
+		\subsection{跳躍積分項 (Jump Integral) }
+		在開始對 PIDE 進行離散化之前, 我們先探討積分項的計算:
+		
+		
+		$$
+		\int_{-\infty}^{\infty}\left[w (x+y, \tau) -w\left (x^{, }, \tau\right) -\frac{\partial w}{\partial x} (x, \tau) \left (e^{y}-1\right) \right] k (y)  d y
+		$$
+		
+		\textbf{萊維測度在 $y=0$ 處具有奇異性}
+		\begin{itemize}
+			\item Lévy 測度 $k (y) \, d y$ 在 $y=0$ 處具有奇異性
+			\item 為了計算該積分, 首先將積分區域劃分為兩個部分：\\
+			(a)  $|y| > \epsilon$\\
+			(b)  $|y| \leq \epsilon$
+			\item 可將其寫為:
+			
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			\int_{-\infty}^{\infty} \left[ w (x + y, \tau)  - w (x, \tau)  - \frac{\partial w}{\partial x} (x, \tau)  (e^y - 1)  \right] k (y)  \, dy \\
+			= \int_{|y| \leq \epsilon} \left[ w (x + y, \tau)  - w (x, \tau)  - \frac{\partial w}{\partial x} (x, \tau)  (e^y - 1)  \right] k (y)  \, dy \\
+			\quad + \int_{|y| > \epsilon} \left[ w (x + y, \tau)  - w (x, \tau)  - \frac{\partial w}{\partial x} (x, \tau)  (e^y - 1)  \right] k (y)  \, dy
+		\end{aligned}
+		$$
+		
+		\subsection{零點附近被積函數的近似 (Approximation for the Integrand near Zero) }
+		
+		\begin{itemize}
+			\item 顯而易見的選擇是令 $\epsilon = \Delta x$.
+			\item 針對零點附近的被積函數, 採用最高可能階數的近似.
+		\end{itemize}
+		
+		
+		$$
+		w (x+y, \tau) -w (x, \tau) -\frac{\partial w}{\partial x} (x, \tau) \left (e^{y}-1\right) 
+		$$
+		
+		對於區域 $|y| \leq \epsilon$, 我們加上並減去項 $y \frac{\partial w}{\partial x} (x, \tau) $.
+		
+		$$
+		\begin{aligned}
+			& \int_{|y| \leq \epsilon}\left[w (x+y, \tau) -w (x, \tau) -\frac{\partial w}{\partial x} (x, \tau) \left (e^{y}-1\right) \right] k (y)  d y \\
+			& =\int_{|y|<=\epsilon}\left[w (x+y, \tau) -w (x, \tau) -y \frac{\partial w}{\partial x} (x, \tau) -\frac{\partial w}{\partial x} (x, \tau) \left (e^{y}-1-{y}\right) \right] k (y)  d y
+		\end{aligned}
+		$$
+		
+		對 $w\left (x + y, \tau \right) $ 和 $e^{y}$ 進行泰勒展開:
+		
+		
+		$$
+		w (x+y, \tau) =w (x, \tau) +y \frac{\partial w}{\partial x} (x, \tau) +\frac{y^{2}}{2} \frac{\partial^{2} w}{\partial x^{2}} (x, \tau) +O\left (y^{3}\right) 
+		$$
+		
+		且:
+		
+		$$
+		e^{y}=1+y+\frac{y^{2}}{2}+O\left (y^{3}\right) 
+		$$
+		
+		插入以求得:
+		
+		\[
+		\int_{|y| \leq \epsilon} \left[ w(x + y, \tau) - w(x, \tau) - \frac{\partial w}{\partial x}(x, \tau)(e^y - 1) \right] k(y)\, dy
+		\]
+		
+		\[
+		\approx \frac{1}{2} \sigma^2(\epsilon) \frac{\partial^2 w}{\partial x^2}(x, \tau)
+		- \frac{1}{2} \sigma^2(\epsilon) \frac{\partial w}{\partial x}(x, \tau)
+		\]
+		
+		定義:
+		
+		$$
+		\sigma^{2} (\epsilon) =\int_{|y| \leq \epsilon} y^{2} k (y)  d y
+		$$
+		
+		我們得到:
+		
+		$$
+		\begin{aligned}
+			\int_{|y| \leq \epsilon}& \left[ w (x + y, \tau)  - w (x, \tau)  - y \frac{\partial w}{\partial x} (x, \tau)  \frac{\partial w}{\partial x} (x, \tau)  (e^y - 1 - y)  \right] k (y)  \, dy \\
+			= &\int_{|y| \leq \epsilon} \left[ \frac{y^2}{2} \frac{\partial^2 w}{\partial x^2} (x, \tau)  - \frac{y^2}{2} \frac{\partial w}{\partial x} (x, \tau)  + O (y^3)  \right] k (y)  \, dy \\
+			\approx &\int_{|y| \leq \epsilon} \left[ \frac{y^2}{2} \frac{\partial^2 w}{\partial x^2} (x, \tau)  - \frac{y^2}{2} \frac{\partial w}{\partial x} (x, \tau)  \right] k (y)  \, dy \\
+			= &\left ( \frac{\partial^2 w}{\partial x^2} (x, \tau)  - \frac{\partial w}{\partial x} (x, \tau)  \right)  \int_{|y| \leq \epsilon} \frac{y^2}{2} k (y)  \, dy
+		\end{aligned}
+		$$
+		
+		\subsection{區域 $|y| > \epsilon$ 的被積函數 (Integrand for the Region $|y|>\epsilon$) }
+		
+		$$
+		\begin{aligned}
+			\int_{|y| > \epsilon} \left[ w (x + y, \tau)  - w (x, \tau)  - \frac{\partial w}{\partial x} (x, \tau)  (e^y - 1)  \right] k (y)  \, dy \\
+			= \int_{|y| > \epsilon} \left ( w (x + y, \tau)  - w (x, \tau)  \right)  k (y)  \, dy 
+			- \frac{\partial w}{\partial x} (x, \tau)  \int_{|y| > \epsilon} (e^y - 1)  k (y)  \, dy \\
+			= \int_{|y| > \epsilon} \left ( w (x + y, \tau)  - w (x, \tau)  \right)  k (y)  \, dy 
+			+ \frac{\partial w}{\partial x} (x, \tau)  \, \omega (\epsilon) 
+		\end{aligned}
+		$$
+		$$
+		\text{此處有} \quad
+		\omega (\epsilon)  = \int_{|y| > \epsilon} (1 - e^y)  k (y)  \, dy
+		$$
+		
+		將所有代入回來, 有:
+		
+		$$
+		\begin{array}{r}
+			\frac{\partial w}{\partial \tau} (x, \tau) 
+			- \frac{1}{2} \boxed{\sigma^2 (\epsilon) } \frac{\partial^2 w}{\partial x^2} (x, \tau) 
+			- \left ( r - q + \boxed{\omega (\epsilon) } \- \frac{1}{2} \boxed{\sigma^2 (\epsilon) } \right)  \frac{\partial w}{\partial x} (x, \tau) 
+			\\	+ r w (x, \tau) - \int_{|y| > \epsilon} \left ( w (x + y, \tau)  - w (x, \tau)  \right)  k (y)  \, dy = 0
+		\end{array}
+		$$
+		
+		
+		\section{離散化 (Discretization) }
+		\subsection{網格點 (Grid Points) }
+		
+		\begin{itemize}
+			\item 對於到期時間 $T$, 我們在 $\tau$ 方向上考慮將其劃分為 $M$ 個相等的子區間.
+			\item 在 $x$ 方向上, 我們假設將區間 $[x_{\text{min}}, x_{\text{max}}]$ 劃分為 $N$ 個相等的子區間.
+			\item 因此我們得到以下在區域 $\left[x_{\min}, x_{\max}\right] \times [0, T]$ 上的網格：
+		\end{itemize}
+		
+		
+		$$
+		D = 
+		\left\{
+		\begin{array}{ll}
+			x_i = x_{\min} + i \Delta x; & \quad \Delta x = \frac{x_{\max} - x_{\min}}{N}, \quad i = 0, \ldots, N \\
+			\tau_j = 0 + j \Delta \tau; & \quad \Delta \tau = \frac{T - 0}{M}, \quad j = 0, \ldots, M
+		\end{array}
+		\right\}
+		$$
+		
+		\subsection{隱性離散化 (Implicit Discretization) }
+		$$
+		\begin{aligned}
+			\frac{1}{\Delta \tau} (w_{i, j+1} - w_{i, j}) 
+			- \frac{1}{2 (\Delta x) ^2} \sigma^2 (\Delta x)  
+			(w_{i+1, j+1} - 2w_{i, j+1} + w_{i-1, j+1})  \\
+			- \left ( r - q + \omega (\Delta x)  - \frac{1}{2} \sigma^2 (\Delta x)  \right)  \frac{1}{2\Delta x}
+			(w_{i+1, j+1} - w_{i-1, j+1})  + r w_{i, j+1} \\
+			- \int_{|y| > \Delta x} \left ( w (x_i + y, \tau_j)  - w (x_i, \tau_j)  \right)  k (y)  \, dy \cong 0
+		\end{aligned}
+		$$
+		
+		等價地:
+		
+		$$
+		\begin{aligned}
+			&- \left ( 
+			\frac{\sigma^2 (\Delta x)  \Delta \tau}{2 \Delta x^2}
+			- \left ( r - q + \omega (\Delta x)  - \frac{1}{2} \sigma^2 (\Delta x)  \right)  
+			\frac{\Delta \tau}{2 \Delta x} \right)  w_{i-1, j+1} + \left ( 1 + r \Delta \tau + \sigma^2 (\Delta x)  \frac{\Delta \tau}{\Delta x^2} \right)  w_{i, j+1} \\
+			&- \left ( 
+			\frac{\sigma^2 (\Delta x)  \Delta \tau}{2 \Delta x^2}
+			+ \left ( r - q + \omega (\Delta x)  - \frac{1}{2} \sigma^2 (\Delta x)  \right)  
+			\frac{\Delta \tau}{2 \Delta x} \right)  w_{i+1, j+1} \\
+			&= w_{i, j} + \Delta \tau \int_{|y| > \Delta x} \left ( w (x_i + y, \tau_j)  - w (x_i, \tau_j)  \right)  k (y)  \, dy
+		\end{aligned}
+		$$
+		
+		\section{積分項 (Integral Term) }
+		\subsection{差值等式 (Difference Equation) }
+		或者簡寫為:
+		
+		$$
+		\begin{aligned}
+			& -B_{l} w_{i-1, j+1}+\left (1+r \Delta \tau+B_{I}+B_{u}\right)  w_{i, j+1}-B_{u} w_{i+1, j+1} \\
+			& =w_{i, j}+\Delta \tau \int_{|y|>\Delta x}\left (w\left (x_{i}+y, \tau_{j}\right)  - w\left (x_{i}, \tau_{j}\right) \right)  k (y)  d y
+		\end{aligned}
+		$$
+		
+		且有:
+		
+		$$
+		\begin{gathered}
+			B_{I}=\frac{\sigma^{2} (\Delta x)  \Delta \tau}{2 \Delta x^{2}}-\left (r-q+\omega (\Delta x) -\frac{1}{2} \sigma^{2} (\Delta x) \right)  \frac{\Delta \tau}{2 \Delta x} \\
+			B_{U}{=}=\frac{\sigma^{2} (\Delta x)  \Delta \tau}{2 \Delta x^{2}}+\left (r-q+\omega (\Delta x) -\frac{1}{2} \sigma^{2} (\Delta x) \right)  \frac{\Delta \tau}{2 \Delta x}
+		\end{gathered}
+		$$
+		
+		此處 $w_{i, 0}=\left (K-e^{x_{i}}\right) ^{+}$. 
+		
+		\subsection{對於積分項的求值 (Evaluation of the Integral Term) }
+		
+		對於 $|y|>\Delta x$, 我們將其分成4個子區間, 然後寫作: 
+		
+		$$
+		\begin{aligned}
+			\int_{|y| > \Delta x} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  k (y)  \, dy 
+			&= \int_{-\infty}^{x_0 - x_i} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  k (y)  \, dy \\
+			&\quad + \int_{x_0 - x_i}^{-\Delta x} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  k (y)  \, dy \\
+			&\quad + \int_{\Delta x}^{x_N - x_i} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  k (y)  \, dy \\
+			&\quad + \int_{x_N - x_i}^{\infty} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  k (y)  \, dy
+		\end{aligned}
+		$$
+		
+		其基本原理是, 在區域 $|y| > \Delta x$ 中可進一步劃分為兩個子區域:
+		
+		
+		(a)  $y < -\Delta x$
+		
+		
+		\begin{itemize}
+			\item 為了使 $x_i + y$ 落在網格內, 必須滿足 $y > x_{\min} - x_i$, 這與 $y > x_0 - x_i = -i \Delta x$ 等價.
+			\item 若 $y < x_0 - x_i$, 則 $x_i + y$ 將會落在網格之外.
+		\end{itemize}
+		
+		(b)  $y > \Delta x$
+		\begin{itemize}
+			\item 為了使 $x_i + y$ 落在網格內, 必須滿足 $y < x_{\max} - x_i$, 這與 $y < x_N - x_i = (N - i)  \Delta x$ 等價.
+			\item 若 $y > x_N - x_i$, 則 $x_i + y$ 將會落在網格之外.
+		\end{itemize}
+		
+		
+		\subsection{對於區域 $y \in\left (x_{0}-x_{i}, -\Delta x\right) $ (For Region $y \in\left (x_{0}-x_{i}, -\Delta x\right) $) }
+		
+		$
+		\text{對於 } y \in (x_0 - x_i, -\Delta x) : 
+		$
+		$$
+		\begin{aligned}
+			\int_{x_0 - x_i}^{-\Delta x} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  k (y)  \, dy
+			&= \int_{x_0 - x_i}^{-\Delta x} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  
+			\frac{e^{-\lambda_n |y|}}{\nu |y|^{1 + Y}} \, dy \\
+			&= \sum_{k=1}^{j-1} \int_{k \Delta x}^{ (k+1)  \Delta x} 
+			\left ( w (x_i - y, \tau_j)  - w_{i, j} \right)  
+			\frac{e^{-\lambda_n y}}{\nu y^{1 + Y}} \, dy
+		\end{aligned}
+		$$
+		
+		$
+		\text{在區間} y \in [k \Delta x, (k+1) \Delta x] \text{上使用線性插值法:} 
+		$
+		$$
+		w (x_i - y, \tau_j)  \cong w_{i-k, j} + 
+		\frac{w_{i-k-1, j} - w_{i-k, j}}{\Delta x} (y - k\Delta x) 
+		$$
+		
+		可得如下項:
+		
+		$$
+		\begin{aligned}
+			\int_{x_0 - x_i}^{-\Delta x} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  k (y)  \, dy 
+			&= \sum_{k=1}^{i-1} \int_{k \Delta x}^{ (k+1) \Delta x} 
+			\left ( w_{i-k, j} + \frac{w_{i-k-1, j} - w_{i-k, j}}{\Delta x} (y - k \Delta x)  - w_{i, j} \right)  
+			\frac{e^{-\lambda_n y}}{\nu y^{1+Y}} \, dy \\
+			&= \sum_{k=1}^{i-1} \frac{1}{\nu} 
+			\left ( w_{i-k, j} - w_{i, j} - k (w_{i-k-1, j} - w_{i-k, j})  \right)  
+			\boxed{\int_{k \Delta x}^{ (k+1) \Delta x} \frac{e^{-\lambda_n y}}{y^{1+Y}} \, dy} \\
+			&\quad + \sum_{k=1}^{i-1} 
+			\frac{w_{i-k-1, j} - w_{i-k, j}}{\nu \Delta x} 
+			\left ( \boxed{\int_{k \Delta x}^{ (k+1) \Delta x} \frac{e^{-\lambda_n y}}{y^{Y}} \, dy} \right) 
+		\end{aligned}
+		$$
+		
+		通過變更變量我們可得:
+		
+		$$
+		\begin{aligned}
+			\int_{x_0 - x_i}^{-\Delta x} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  k (y)  \, dy
+			&= \sum_{k=1}^{i-1} \frac{\lambda_n^{Y}}{\nu} 
+			\left ( w_{i-k, j} - w_{i, j} - k (w_{i-k-1, j} - w_{i-k, j})  \right) 
+			\left\{ \int_{k\Delta x \lambda_n}^{ (k+1) \Delta x \lambda_n} \frac{e^{-z}}{z^{1+Y}} \, dz \right\} \\
+			&\quad + \sum_{k=1}^{i-1} 
+			\frac{w_{i-k-1, j} - w_{i-k, j}}{\nu \lambda_n^{1 - Y} \Delta x} 
+			\left ( \int_{k\Delta x \lambda_n}^{ (k+1) \Delta x \lambda_n} \frac{e^{-z}}{z^Y} \, dz \right)  \\
+			\\
+			&= \sum_{k=1}^{i-1} \frac{\lambda_n^{Y}}{\nu}
+			\left ( w_{i-k, j} - w_{i, j} - k (w_{i-k-1, j} - w_{i-k, j})  \right) 
+			\left\{ g_2 (k\lambda_n \Delta x)  - g_2 ( (k+1) \lambda_n \Delta x)  \right\} \\
+			&\quad + \sum_{k=1}^{i-1}
+			\frac{w_{i-k-1, j} - w_{i-k, j}}{\lambda_n^{1 - Y} \nu \Delta x}
+			\left ( g_1 (k\Delta x \lambda_n)  - g_1 ( (k+1) \Delta x \lambda_n)  \right) 
+		\end{aligned}
+		$$
+		
+		\textbf{$g_{1}$ 和 $g_{2}$}
+		
+		此處有:
+		
+		$$
+		\begin{aligned}
+			& g_{1} (\xi) =\int_{\xi}^{\infty} \frac{e^{-z}}{z^{\alpha}} d z \\
+			& g_{2} (\xi) ^{}=\int_{\xi}^{\infty} \frac{e^{-z}}{z^{\alpha+1}} d z
+		\end{aligned}
+		$$
+		
+		對於 $0 \leq \alpha \leq 1$.
+		
+		\subsection{對於區間 $y \in\left (\Delta x, x_{N}-x_{i}\right) $ (For Region $y \in\left (\Delta x, x_{N}-x_{i}\right) $) }
+		
+		$
+		\text{對於 } y \in (\Delta x, x_N - x_i) 
+		$
+		$$
+		\begin{aligned}
+			\int_{\Delta x}^{x_N - x_i} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  k (y)  \, dy 
+			&= \sum_{k=1}^{N - i - 1} \int_{k\Delta x}^{ (k+1) \Delta x} 
+			\left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  
+			\frac{e^{-\lambda_p y}}{\nu y^{1+Y}} \, dy
+		\end{aligned}
+		$$
+		
+		$
+		\text{使用一個線性近似對於 } y \in [k \Delta x, (k+1) \Delta x] 
+		$
+		$$
+		w (x_i + y, \tau_j)  \cong w_{i+k, j} + 
+		\frac{w_{i+k+1, j} - w_{i+k, j}}{\Delta x} (y - k \Delta x) 
+		$$
+		
+		我們可以得到:
+		
+		$$
+		\begin{aligned}
+			& \int_{\Delta x}^{x_{N}-x_{i}}\left (w\left (x_{i}+y, \tau_{j}\right) -w_{i, j}\right)  k (y)  d y \\
+			& =\sum_{k=1}^{N-i-1} \int_{k \Delta x}^{ (k+1)  \Delta x}\left (w_{i+k, j}+\frac{w_{i+k+1, j}-w_{i+k, j}}{\Delta x}\left (y- k \Delta x\right) -w_{i, j}\right)  \frac{e^{-\lambda_{p} y}}{\nu y^{1+Y}} d y \\
+			& =\sum_{k=1}^{N-i-1} \frac{1}{\nu}\left (w_{i+k, j}-w_{i, j}-k\left (w_{i+k+1, j}-w_{i+k, j}\right) \right) \left\{\int_{k \Delta x}^{ (k+1)  \Delta x} \frac{e^{-\lambda_{p} y}}{y^{1+Y}} d y\right\} \\
+			& +\sum_{k=1}^{N-i-1} \frac{w_{i+k+1, j}-w_{i+k, j}}{v\Delta x}\left (\int_{k \Delta x}^{ (k+1)  \Delta x} \frac{e^{-\lambda_{p} y}}{y^{Y}} d y\right)  \\
+			& =\text {  } \sum_{k=1}^{N-i-1} \frac{\lambda_{p}^{Y}}{\nu}\left (w_{i+k, j}-w_{i, j}-k\left (w_{i+k+1, j}-w_{i+k, j}\right) \right) \left\{g_{2}\left (k \Delta x \lambda_{p}\right) -g_{2}\left ( (k+1)  \Delta x \lambda_{p}\right) \right\} \\
+			& +\sum_{k=1}^{N-i-1} \frac{w_{i+k+1, j}-w_{i+k, j}}{\lambda_{p}^{1-Y} \nu \Delta x}\left (g_{1}\left (k \Delta x \lambda_{p}\right) -g_{1}\left ( (k+1)  \Delta x \lambda_{p}\right) \right) 
+		\end{aligned}
+		$$
+		
+		\subsection{對於區間 $y \in\left (-\infty, x_{0}-x_{i}\right) $ (For Region $y \in\left (-\infty, x_{0}-x_{i}\right) $) }
+		對於 $y \in\left (-\infty, x_{0}-x_{i}\right) $
+		
+		$$
+		\begin{aligned}
+			& \int_{-\infty}^{x_{0}-x_{i}}\left (w\left (x_{i}+y, \tau_{j}\right) -w_{i, j}\right)  k (y)  d y=\int_{-\infty}^{x_{0}-x_{i}}\left (w\left (x_{i}+y, \tau_{j}\right) -\omega_{{i}, j}\right)  \frac{e^{-\lambda_{n}|y|}}{\nu|y|^{1+Y}} d y \\
+			& =\int_{i \Delta x}^{\infty}\left (w\left (x_{i}-y, \tau_{j}\right) -w_{i, j}\right)  \frac{e^{-\lambda_{n} y}}{\nu y^{1+Y}} d y
+		\end{aligned}
+		$$
+		
+		假設 $w\left (x_{i}-y, \tau_{j}\right) =K-e^{x_{i}-y}$ 在區間內, 則有:
+		
+		$$
+		\begin{aligned}
+			& \int_{-\infty}^{x_{0}-x_{i}}\left (w\left (x_{i}+y_{0} \tau_{j}\right) -w_{i, j}\right)  k (y)  d y \\
+			& \text {=} \int_{i \Delta x}^{\infty}\left (K-e^{x_{i}-y}-w_{i, j}\right)  \frac{e^{-\lambda_{n} y}}{\nu y^{1+Y}} d y \\
+			& =\frac{1}{\nu}\left (K-w_{i, j}\right)  \int_{i \Delta x}^{\infty} \frac{e^{-\lambda_{n} y}}{y^{1+Y}} d y-\frac{1}{\nu} e^{x_{i}} \int_{i \Delta x}^{\infty} \frac{e^{-\left (\lambda_{n}+1\right)  y}}{y^{1+Y}} d y \\
+			& =\frac{\lambda_{n}^{Y}}{\nu}\left (K-w_{i, j}\right)  g_{2}\left (i \Delta x \lambda_{n}\right) -\frac{\left (\lambda_{n}+1\right) ^{Y}}{\nu} e^{x_{i}} g_{2}\left (i \Delta x\left (\lambda_{n}+1\right) \right) 
+		\end{aligned}
+		$$
+		
+		\subsection{對於區間 $y \in[ (N-i)  \Delta x, \infty) $ (For Region $y \in[ (N-i)  \Delta x, \infty) $) }
+		對於 $y \in[ (N-i)  \Delta x, \infty) $, 我們假設 $w\left (x_{i}+y, \tau_{j}\right) =0$
+		
+		$$
+		\begin{aligned}
+			\int_{x_N - x_i}^{\infty} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  k (y)  \, dy 
+			&= \int_{ (N - i) \Delta x}^{\infty} \left ( w (x_i + y, \tau_j)  - w_{i, j} \right)  
+			\frac{e^{-\lambda_p y}}{\nu y^{1 + Y}} \, dy \\
+			&= - \frac{\lambda_p^Y}{\nu} \, w_{i, j} \, g_2 ( (N - i) \Delta x \lambda_p) 
+		\end{aligned}
+		$$
+		
+		\subsection{替換後的差值等式 (Difference Equation After Substitution) }
+		
+		將上述所有項整合後 {\small (對於 $i=1$ 或 $i=N-1$ 的情況, 我們施加邊界條件) }, 在節點 $\left (x_{i}, \tau_{j+1}\right) $ 處可得：
+		
+		
+		$$
+		I_{i, j+1} w_{i-1, j+1}+d_{i, j+1} w_{i, j+1}+u_{i, j+1} w_{i+1, j+1}=w_{i, j}+\frac{\Delta \tau}{\nu} R_{i, j}
+		$$
+		
+		此處有:
+		
+		$$
+		\begin{aligned}
+			& I_{i, j+1}=-B_{I} \\
+			& d_{i, j+1}=1+r \Delta \tau+B_{I}+B_{u}+\frac{\Delta \tau}{\nu}\left (\lambda_{n}^{Y} g_{2}\left (i \Delta x \lambda_{n}\right) +\lambda_{p}^{Y} g_{2}\left ( (N-i)  \Delta x \lambda_{p}\right) \right)  \\
+			& u_{i, j+1}=-B_{u}
+		\end{aligned}
+		$$
+		
+		
+		\textbf{r.h.s.}
+		$$
+		\begin{aligned}
+			R_{i, j} &= \sum_{k=1}^{i-1} \lambda_n^Y 
+			\left ( w_{i-k, j} - w_{i, j} - k (w_{i-k-1, j} - w_{i-k, j})  \right)  
+			\left\{ g_2 (k \Delta x \lambda_n)  - g_2 ( (k+1) \Delta x \lambda_n)  \right\} \\
+			&\quad + \sum_{k=1}^{i-1} \frac{w_{i-k-1, j} - w_{i-k, j}}{\lambda_n^{1 - Y} \Delta x}
+			\left ( g_1 (k \Delta x \lambda_n)  - g_1 ( (k+1) \Delta x \lambda_n)  \right)  \\
+			&\quad + \sum_{k=1}^{N - i - 1} \lambda_p^Y 
+			\left ( w_{i+k, j} - w_{i, j} - k (w_{i+k+1, j} - w_{i+k, j})  \right) 
+			\left\{ g_2 (k \Delta x \lambda_p)  - g_2 ( (k+1) \Delta x \lambda_p)  \right\} \\
+			&\quad + \sum_{k=1}^{N - i - 1} \frac{w_{i+k+1, j} - w_{i+k, j}}{\lambda_p^{1 - Y} \Delta x}
+			\left ( g_1 (k \Delta x \lambda_p)  - g_1 ( (k+1) \Delta x \lambda_p)  \right)  \\
+			&\quad + \lambda_n^Y g_2 (i \Delta x \lambda_n) 
+			- e^{x_i} (\lambda_n + 1) ^Y g_2 (i \Delta x (\lambda_n + 1) ) 
+		\end{aligned}
+		$$
+		
+		入之前所做的:
+		
+		$$
+		\begin{aligned}
+			& B_{I}=\frac{\sigma^{2} (\Delta x)  \Delta \tau}{2 \Delta x^{2}}-\left (r-q+\omega (\Delta x) -\frac{1}{2} \sigma^{2} (\Delta x) \right)  \frac{\Delta \tau}{2 \Delta x} \\
+			& B_{u}=\frac{\sigma^{2} (\Delta x)  \Delta \tau}{2 \Delta x^{2}}+\left (r-q+\omega (\Delta x) -\frac{1}{2} \sigma^{2} (\Delta x) \right)  \frac{\Delta \tau}{2 \Delta x}
+		\end{aligned}
+		$$
+		\subsection{預先計算向量以加速運算 (Pre-calculated Vectors to Speed Up) }
+		
+		注意到:
+		
+		\begin{itemize}
+			\item $g_{1}\left (k \lambda_{n} \Delta x\right) $ for $k=1, \ldots, N$
+			\item $g_{1}\left (k \lambda_{p} \Delta x\right) $ for $k=1, \ldots, N$
+			\item $g_{2}\left (k \lambda_{n} \Delta x\right) $ for $k=1, \ldots, N$
+			\item $g_{2}\left (k \lambda_{p} \Delta x\right) $ for $k=1, \ldots, N$
+			\item $g_{2}\left (k\left (\lambda_{n}+1\right)  \Delta x\right) $ for $k=1, \ldots, N$
+			\item $g_{2}\left (k\left (\lambda_{p} - 1\right)  \Delta x\right) $ for $k=1, \ldots, N$
+			
+			它們被預先計算且存儲了. 
+			
+		\end{itemize}
+		
+		\textbf{以 $g_{1}$ 和 $g_{2}$ 表示的 $\sigma^{2} (\epsilon) $ 與 $\omega (\epsilon) $}
+		
+		
+		\[
+		\sigma^2 (\epsilon)  =
+		\frac{1}{\nu} \lambda_p^{Y-2} \left ( - (\lambda_p \epsilon) ^{1 - Y} e^{-\lambda_p \epsilon}
+		+ (1 - Y)  (g_1 (0)  - g_1 (\lambda_p \epsilon) )  \right) 
+		+ \frac{1}{\nu} \lambda_n^{Y-2} \left ( - (\lambda_n \epsilon) ^{1 - Y} e^{-\lambda_n \epsilon}
+		+ (1 - Y)  (g_1 (0)  - g_1 (\lambda_n \epsilon) )  \right) 
+		\]
+		
+		\[
+		\omega (\epsilon)  =
+		\frac{\lambda_p^Y}{\nu} g_2 (\lambda_p \epsilon) 
+		- \frac{ (\lambda_p - 1) ^Y}{\nu} g_2 ( (\lambda_p - 1) \epsilon) 
+		+ \frac{\lambda_n^Y}{\nu} g_2 (\lambda_n \epsilon) 
+		- \frac{ (\lambda_n + 1) ^Y}{\nu} g_2 ( (\lambda_n + 1) \epsilon) 
+		\]
+		
+		
+		\section{邊界條件 (Boundary Conditions) }
+		\subsection{諾伊曼邊界條件的實施 (Implementing Neumann Boundary Conditions) }
+		
+		$$
+		\begin{aligned}
+			& \lim _{x \downarrow \rightarrow \infty} \frac{\partial^{2} w}{\partial x^{2}} (x, \tau) -\frac{\partial w}{\partial x} (x, \tau) =0 \text {, }  \quad \forall \tau \\
+			& \lim _{x \uparrow+\infty} \frac{\partial^{2} w}{\partial x^{2}} (x, \tau) -\frac{\partial w}{\partial x}\left (x, \tau_{}\right)  {=} 0 \quad \forall \tau
+		\end{aligned}
+		$$
+		
+		將其離散化, 會給出:
+		
+		$$
+		\frac{w_{i-1, j+1}-2 w_{i, j+1} b w_{i+1, j+1}}{h^{2}}-\frac{w_{i+1, j+1}-w_{i-1, j+1}}{2 h}=0
+		$$
+		
+		或者等價地:
+		
+		$$
+		\left (1+\frac{h}{2}\right)  w_{i-1, j+1}-2 w_{i, j+1}+\left (1-\frac{h}{2}\right)  w_{i+1, j+1}=0
+		$$
+		
+		在我們的情況中, $x_{0}$ 與 $x_{N}$ 是邊界點.
+		
+		
+		{在 } \( i = 1 \) 
+		
+		\[
+		\left (1 + \frac{h}{2} \right)  w_{0, j+1}
+		- 2 w_{1, j+1}
+		+ \left (1 - \frac{h}{2} \right)  w_{2, j+1}
+		= 0
+		\]
+		
+		{解} \( w_{0, j+1} \) 
+		
+		\[
+		\boxed{
+			w_{0, j+1} = \frac{2}{1 + \frac{h}{2}} w_{1, j+1}
+			- \frac{1 - \frac{h}{2}}{1 + \frac{h}{2}} w_{2, j+1}
+		}
+		\]
+		
+		\vspace{1em}
+		
+		{在 } \( i = N - 1 \) 
+		
+		\[
+		\left (1 + \frac{h}{2} \right)  w_{N-2, j+1}
+		- 2 w_{N-1, j+1}
+		+ \left (1 - \frac{h}{2} \right)  w_{N, j+1}
+		= 0
+		\]
+		
+		{解 } \( w_{N, j+1} \) 
+		
+		\[
+		\boxed{
+			w_{N, j+1}
+			= - \frac{1 + \frac{h}{2}}{1 - \frac{h}{2}} w_{N-2, j+1}
+			+ \frac{2}{1 - \frac{h}{2}} w_{N-1, j+1}
+		}
+		\]
+		
+		\subsection{應用邊界條件後的差值等式 (Difference Equation after Applying BCs) }
+		\underline{{對於 } \( i = 1 \) }
+		
+		\[
+		\left ( \frac{2}{1 + \frac{h}{2}} l_{1, j+1} + d_{1, j+1} \right)  w_{1, j+1}
+		+ \left ( u_{1, j+1} - \frac{1 - \frac{h}{2}}{1 + \frac{h}{2}} l_{1, j+1} \right)  w_{2, j+1}
+		= w_{1, k} + \textit{r.h.s.}
+		\]
+		
+		\vspace{1em}
+		
+		\underline{{對於 } \( i = N - 1 \) }
+		
+		\[
+		\left ( l_{N-1, j+1} - \frac{1 + \frac{h}{2}}{1 - \frac{h}{2}} u_{N-1, j+1} \right)  w_{N-2, j+1}
+		+ \left ( d_{N-1, j+1} + \frac{2}{1 - \frac{h}{2}} u_{N-1, j+1} \right)  w_{N-1, j+1}
+		= w_{N-1, k} + {r.h.s.}
+		\]
+		
+		
+		\section{美式期權 (American Options) }
+		
+		如同在擴散模型架構中, 我們可以通過以下方法對美式期權進行定價：\\
+		(a)  在每一個時間步驟應用百慕大期權近似法 (Bermudan approach) \\
+		(b)  應用布里南–施瓦茨算法\\
+		(c)  應用合成股利流程 (synthetic dividend process) 
+		
+		
+		\subsection{合成股利過程 (Synthetic Dividend Process) }
+		在執行區間:
+		
+		$$
+		\begin{aligned}
+			\mathcal{L} w= & \frac{\partial w}{\partial \tau} (x, \tau) - (r-q)  \frac{\partial w}{\partial x} (x, \tau) +r w (x, \tau)  \\
+			& -\int_{-\infty}^{\infty}\left[w (x+y, \tau) -w (x, \tau) -\frac{\partial w}{\partial x} (x, \tau) \left (e^{y}-1\right) \right] k (y)  d y \\
+			= & \delta (x) 
+		\end{aligned}
+		$$
+		
+		函數 $\delta (x) $ 通常被稱為股利過程 (dividend process). 在執行區域中, 令 $w (x, \tau)  = K - e^{x}$, 適用於 $x \leq x (\tau) $. 
+		
+		
+		$$
+		\begin{aligned}
+			w (x, \tau)  & =K-e^{x} \\
+			\frac{\partial w}{\partial \tau} (x, \tau)  & =0 \\
+			\frac{\partial w}{\partial x} (x, \tau)  & =-e^{x}
+		\end{aligned}
+		$$
+		
+		
+		\begin{itemize}
+			\item 在代入這些數值之前, 我們應注意當 $x + y > x^{*} (\tau) $ (即連續區域) 時, $w (x + y, \tau) $ 的值尚不可得
+			\item 將積分劃分為兩個區域:
+		\end{itemize}
+		
+		
+		$$
+		\begin{aligned}
+			& \text { (a)  } x+y \leq x^{*} (\tau)  \\
+			& \text { (b)  } x+y>x^{*} (\tau) 
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item 或者等價地:
+			
+			
+			$$
+			(a)  y^{} \leq x^{*} (\tau) -x
+			$$
+			$$
+			(b)  y>x^{*} (\tau) -x
+			$$
+			
+			
+			\item {對於 } \( y \leq x^* (\tau)  - x \), {積分項消失了}
+			
+			\[
+			w (x+y, \tau)  - w (x, \tau)  - \frac{\partial w}{\partial x} (x, \tau)  (e^y - 1) 
+			\]
+			\[
+			= \left (K - e^{x+y}\right)  - \left (K - e^x\right)  - \left (-e^x\right)  (e^y - 1) 
+			\]
+			\[
+			= 0
+			\]
+			
+			\vspace{1em}
+			
+			\item {對於 } \( y > x^* (\tau)  - x \) 
+			
+			\[
+			w (x+y, \tau)  - w (x, \tau)  - \frac{\partial w}{\partial x} (x, \tau)  (e^y - 1) 
+			\]
+			\[
+			= w (x+y, \tau)  - (K - e^x)  - (-e^x)  (e^y - 1) 
+			\]
+			\[
+			= w (x+y, \tau)  - (K - e^{x+y}) 
+			\]
+		\end{itemize}
+		
+		\begin{itemize}
+			\item 所以在執行區間我們得到了一下股利過程:
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			\delta (x)  & =0- (r-q) \left (-e^{x}\right) +r\left (K-e^{x}\right)  \\
+			& \left.-\int_{x (\tau)  d x}^{\infty} d w (x+y, \tau) -\left (K-e^{x+y}\right) \right] k (y)  d y \\
+			& =\left[w (x+y, \tau) -\left (K-e^{x+y}\right) \right]
+		\end{aligned}
+		$$
+		
+		代入股利項後, 我們得到在整個區域上關於 $W (\hat{X}, t) $ 的 PIDE 如下:
+		
+		
+		$$
+		\begin{aligned}
+			& \frac{\partial w}{\partial \pi} (x, \tau) - (r-q)  \frac{\partial w}{\partial x} (x, \tau) +r w (x, \tau)  \\
+			& -\int_{-\infty}^{\infty}\left[w\left (x_{0}=0 . y, \tau\right) -w (x, \tau) -\frac{\partial w}{\partial x} (x, \tau) \left (e^{y}-1\right) \right] k (y)  d y
+		\end{aligned}
+		$$
+		
+		\section{向前 PIDE (Forward PIDEs (Carr-Hirsa)) }
+		Carr-Hirsa 研究了向前 PIDEs 對於:
+		
+		\begin{itemize}
+			\item American options
+			\item Down-and-Out calls (DOC) 
+			\item Up-and-Out callis (UOC) 
+		\end{itemize}
+		
+		\textbf{對於不同 $K \& T$ 的向後 UOC}
+		
+		\begin{center}
+			\includegraphics[max width=\textwidth]{UOC}
+		\end{center}
+		
+		\textbf{向前 UOC}
+		\begin{center}
+			\includegraphics[max width=0.6\textwidth]{FUOC}
+		\end{center}
+		
+		\textbf{首次通過時間}
+		
+		\[
+		G (s, t, T)  = \mathbb{E}_t^{\mathbb{Q}} \left\{ \mathbf{1}_{\{s (u)  < H, \ 0 \leq u \leq T\}} \right\}
+		\]
+		
+		 \( G (s, t, T)  \) 是一個鞅, 且有:
+		
+		\[
+		G_t + (r + \omega) s G_s + \int_{-\infty}^{+\infty} \left ( G (se^y, t, T)  - G (s, t, T)  \right)  k (y) \, dy = 0
+		\]
+		
+		以及
+		
+		\begin{align*}
+			\text{終端條件:} & \quad G (s, T, T)  = 0 \quad \text{for } s \geq H \\
+			\text{邊界條件:} & \quad G (s, t, T)  = 1 \quad \text{for } s < H \quad \forall t
+		\end{align*}
+		
+	\end{document}

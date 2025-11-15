@@ -1,0 +1,902 @@
+\documentclass[letterpaper]{article} 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage{ctex} 
+\usepackage[dvipsnames]{xcolor}
+\colorlet{LightRubineRed}{RubineRed!70}
+\colorlet{Mycolor1}{green!10!orange}
+\definecolor{Mycolor2}{HTML}{00F9DE}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{lipsum}
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage[export]{adjustbox}
+\graphicspath{ {./images/} }
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{tcolorbox}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref} 
+\usepackage{xcolor} % For custom colors
+\lstset{
+	language=Python,                % Choose the language (e.g., Python, C, R)
+	basicstyle=\ttfamily\small, % Font size and type
+	keywordstyle=\color{blue},  % Keywords color
+	commentstyle=\color{gray},  % Comments color
+	stringstyle=\color{red},    % String color
+	numbers=left,               % Line numbers
+	numberstyle=\tiny\color{gray}, % Line number style
+	stepnumber=1,               % Numbering step
+	breaklines=true,            % Auto line break
+	backgroundcolor=\color{black!5}, % Light gray background
+	frame=single,               % Frame around the code
+}
+\usepackage{float}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+	\usepackage[]{amssymb} %gives us the character \varnothing
+	
+	
+	\title{Lecture 6, IEOR 4732 \\
+		\small{Random Number Generation and Monte-Carlo Simulation\\
+			隨機數生成和蒙特卡羅模擬方法
+		}
+	}
+	\author{Zongyi Liu}
+	\date{Wed, Jan 29, 2025}
+	
+	\begin{document}
+		\maketitle
+		\tableofcontents
+		
+		\section{日程 (Agenda)}
+		\begin{itemize}
+			\item 蒙特卡羅模擬
+			\begin{itemize}
+				\item 隨機數生成. 
+				\item 標準均一分部 $\mathcal{U} (0, 1)$.
+				\item 來自不同分部的抽樣. 
+				\begin{itemize}
+					\item 逆變換
+					\begin{itemize}
+						\item $\mathcal{U} (a, b)$
+						\item 伯努利分佈
+						\item 指數分佈
+						\item 反正弦定律分佈
+					\end{itemize}
+					\item 接受-拒絕方法 (Acceptance-Rejection Method)
+					\begin{itemize}
+						\item 標準正態分佈
+						\item 泊松分佈
+					\end{itemize}
+				\end{itemize}
+				\item 標準正態隨機變量
+				\begin{itemize}
+					\item 有理近似
+					\item 波克斯-穆勒方法
+					\item 瑪薩格利亞極座標方法
+				\end{itemize}
+				\item 多變量正態
+			\end{itemize}
+		\end{itemize}
+		
+		\section{引入 (Introduction)}
+		\subsection{費曼-卡克公式 (Feyman-Kac Formula)}
+		\begin{itemize}
+			\item 在馬爾可夫架構下, 用於衍生品定價時, 費曼-卡克公式建立了偏微分方程與隨機微分方程之間的聯繫. 
+			\item 有限差分法也可用來對 PDE 或 PIDE 進行數值求解. 
+			\item 當維度 $d \rightarrow \infty$ 時, 有限差分法變得不可行且不切實際. 
+			\item 蒙特卡羅方法可以透過費曼-卡克表徵, 與求解 PDE/PIDE 的有限差分法建立關聯. 
+			\item 不同於有限差分法僅限於馬爾可夫架構.
+			\item 蒙特卡羅模擬不受此限制, 且不受維度影響. 
+		\end{itemize}
+		
+		
+		\subsection{馬爾可夫過程 (Markov Processes)}
+		\begin{itemize}
+			\item 一種其未來機率僅由當前 (最新) 狀態所決定的過程. 
+			\item 給定目前的狀態後, 未來與過去相互獨立. 
+			\item 任何路徑依賴性都會使該過程成為非馬爾可夫過程. 
+		\end{itemize}
+		
+		
+		\subsection{總述 (Big Picture)}
+		\begin{itemize}
+			\item 從本質上講, 模擬方法非常簡單. 
+			\item 用於衍生品定價的基本模擬演算法可以非常簡潔地描述如下: 
+			\item 計算 $V_{T} = \mathrm{C} \, \mathbb{E}\left[f\left (X_{T}\right)\right]$
+			\item 我們做如下的步驟: \\
+			for $j=1, \ldots, N$\\
+			Generate $X_{j}$\\
+			Compute $V_{j}=\operatorname{Cf}\left (X_{j}\right)$\\
+			end for\\
+			$V \approx \frac{1}{N} \sum_{j=1}^{N} V_{j}$
+		\end{itemize}
+		
+		\subsection{有效但代價高昂 (Powerful but Expensive)}
+		
+		\begin{itemize}
+			\item 模擬方法具有高度靈活性, 這使得它們非常強大且應用範圍廣泛. 
+			\item 不過這也伴隨著代價. 
+			\item 模擬方法通常是所有可用定價方法中成本最高的. 
+			\item 它們往往作為最後手段來使用. 
+			\item 當合約過於複雜時, 模擬方法可能是唯一可行的定價手段. 
+		\end{itemize}
+		
+		
+		\subsection{大數和中央極限法則 (LLN and CLT)}
+		\begin{itemize}
+			\item LLN
+		\end{itemize}
+		
+		$$
+		\frac{1}{N} \sum_{j=1}^{N} X_{j} \rightarrow \mu \text { as } N \rightarrow \infty
+		$$
+		
+		\begin{itemize}
+			\item CLT
+		\end{itemize}
+		
+		$$
+		\begin{array}{r}
+			\frac{\bar{X}_{N}^{\text {}}-\mu}{\sigma / \sqrt{N}} \rightarrow \mathcal{N} (0, 1) \text { as } N \rightarrow \infty \\
+			\bar{X}_{N}-\mu \rightarrow \mathcal{N}\left (0, \sigma^{2} / N\right)
+		\end{array}
+		$$
+		
+		\begin{itemize}
+			\item 這使我們能夠衡量估計結果的準確性. 
+			\item 為達到特定準確度所需的樣本數. 
+		\end{itemize}
+		
+		\subsection{收斂速度獨立於維度 (Convergence Independent of Dimension)}
+		\begin{itemize}
+			\item 此特性同樣適用於多維情況, 收斂階與問題維度無關, 為 $O\left (N^{1/2}\right)$. 
+			\item 我們將介紹基於模擬的定價方法中最關鍵的要素. 
+			\item 此主題內容極為廣泛, 已有整本專書專門探討 (例如 Glasserman 的著作). 
+			\item 關於模擬方法的更多內容, 將在 IEOR4703 課程中進一步介紹. 
+		\end{itemize}
+		
+		\section{均一隨機變量 (Uniform Random Variables)}
+		\subsection{隨機變量的生成 (Random Number Generation)}
+		\begin{itemize}
+			\item 任何模擬方法都從隨機數的生成開始.
+			\item 有許多不同的演算法可用於產生隨機數, 包括線性同餘生成器、組合式生成器等.
+			\item 隨機數生成本身就是一個獨立的研究領域.
+			\item 本處不對其進行全面回顧.
+		\end{itemize}
+		
+		\subsection{在 $(0, 1)$ 上的均一分佈 (Uniform Random Number on $(0, 1)$)}
+		\begin{itemize}
+			\item 假設已有一個隨機數生成器, 能夠從 $1$ 到某個很大的數 $N$ 間生成一個隨機整數 $x$.
+			\item 為了產生一個離散均一分布 (discrete uniform), 只需計算 $\frac{x}{N+1}$.
+			\item 這將返回一個介於 $0.0$ 與 $1.0$ 之間的均勻隨機數.
+		\end{itemize}
+		
+		\subsection{標準均一分佈 (Standard Uniform Distribution)}
+		對於我們的目的, 我們假設可取得一列隨機變數 $U_{1}, U_{2}, U_{3}, \ldots$, 其彼此獨立, 且每個都滿足下列條件: 
+		
+		$$
+		p\left (U_{i} \leq u\right)=\left\{\begin{array}{cc}
+			0, & u<0 \\
+			u, & 0 \leq u \leq 1 \\
+			1, & u>1
+		\end{array}\right.
+		$$
+		
+		\begin{itemize}
+			\item 每個均勻分布樣本記作 $U \sim \mathcal{U} (0, 1)$.
+			\item 顯然其值介於 0 與 1 之間.
+			\item 幾乎所有程式語言與數學分析套件中都內建有產生標準一維隨機數的函數.
+		\end{itemize}
+		
+		
+		\section{來自各種分佈的抽樣 (Samples from Various Distributions)}
+		\begin{itemize}
+			\item 大多數模擬需要從非均勻的機率分布中抽樣隨機變數或隨機向量.
+			\item 有兩種通用且廣泛使用的技術, 可在給定標準均勻樣本的情況下生成其他分布的樣本: 
+			\begin{itemize}
+				\item 逆變換法 (Inverse transform method)
+				\item 接受–拒絕法 (Acceptance–Rejection method)
+			\end{itemize}
+		\end{itemize}
+		
+		
+		\subsection{逆變換法 (Inverse Transform Method)}
+		\begin{itemize}
+			\item $P (X<x)=F (x) \forall x$
+			\item 借助逆變換法, 我們得以生成隨機變量, 通過應用: 
+		\end{itemize}
+		
+		$$
+		x=F^{-1} (U) \text { 此處 } U \sim \mathcal{U} (0, 1)
+		$$
+		
+		\begin{itemize}
+			\item $\mathcal{U} (0, 1)$ 表示在 $[0, 1]$ 上的均一分佈. 
+			\item 來證實: 
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			p_{} (X \leq x) & =p\left (F^{-1} (U) \leq x\right) \\
+			& =p (U \leq F (x)) \\
+			& =F (x)
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item 若一個函數是嚴格遞增的, 則其反函數是明確定義的.
+			\item 若非如此, 則 (反函數)可能不存在或不是唯一的.
+		\end{itemize}
+		
+		$$
+		F^{-1} (u)=\inf \{x: F (x) \leq u\}
+		$$
+		
+		\includegraphics[max width=0.7\textwidth, center]{pdf}
+		
+		
+		\subsubsection{$X \sim \mathcal{U} (a, b)$}
+		\textbf{案例 ($\mathcal{U} (a, b)$ 的均一分佈)}
+		$$
+		f (x)=\left\{\begin{array}{cll}
+			0 & , & x<a \\
+			\frac{1}{b-a} & , & a \leq x<b \\
+			0 & , & x \geq b
+		\end{array}\right.
+		$$
+		
+		它的累積分佈為: 
+		
+		$$
+		F (x)=\left\{\begin{array}{cll}
+			0 & , & x<a \\
+			\frac{x-a}{b-a} & , & a \leq x<b \\
+			1 & , & x \geq b
+		\end{array}\right.
+		$$
+		
+		它的反函數為: 
+		
+		$$
+		X=F^{-1} (U)= (b-a) U+a
+		$$
+		
+		給定 $U \sim \mathcal{U} (0, 1)$, 可以如下方式生成區間上的均勻分布 $X$: $
+		X = (b - a) U + a \sim \mathcal{U} (a, b)$
+		
+		\subsubsection{伯努利分布 (Bernoulli Distribution)}
+		
+		\begin{itemize}
+			\item 是對二元結果最簡單的建模方式
+			\item 在實務中被廣泛應用
+			\item 若隨機變數 $x \in \{0, 1\}$ 且具有參數 $p$, 當 $P (x=0) = 1 - p$ 且 $P (x=1) = p$ 時, 則 $x$ 服從伯努利分布, 即: 
+		\end{itemize}
+		
+		$$
+		f (x)=\left\{\begin{array}{cl}
+			1-p & x=0 \\
+			p & x=1
+		\end{array}\right.
+		$$
+		
+		\begin{itemize}
+			\item 或表示為機率質量函數: $f (x) = p^{x} (1 - p)^{1 - x}$, 以及其累積分布函數 (CDF)
+		\end{itemize}
+		
+		$$
+		F (x)=\left\{\begin{array}{cl}
+			1-p & x=0 \\
+			1 & x=1
+		\end{array}\right.
+		$$
+		
+		\begin{itemize}
+			\item 其期望與變異數分別為: $\mathbb{E} (x) = p$, $\operatorname{var} (x) = p (1 - p)$
+			\item 給定 $U \sim \mathcal{U} (0, 1)$, 可通過以下方式從伯努利分布中抽樣: 
+		\end{itemize}
+		
+		
+		$$
+		\begin{aligned}
+			& \text { if } U<1-p \text { set } x=0 \\
+			& \text { otherwise set } x=1
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item 多努利分布 (Multinoulli, 又稱分類分佈 (categorical distribution)), 具有 $k$ 個不同狀態, 並由參數 $p \in [0, 1]^{k-1}$ 所參數化.
+		\end{itemize}
+		
+		
+		\subsubsection{指數分佈 (Exponential Distribution)}
+		
+		期望為 $\theta$ 的指數分佈具有如下分佈: 
+		
+		$$
+		F (x)=1-\exp (-x / \theta), \quad x \geq 0
+		$$
+		
+		跳躍間隔時間的分布來自於速率為 $\frac{1}{\theta}$ 的泊松過程, 反轉指數分佈如下: 
+		
+		
+		$$
+		\begin{aligned}
+			X & =-\theta \log (1-U) \\
+			X & =-\theta \log U
+		\end{aligned}
+		$$
+		
+		因為 $U$ 和 $1 - U$ 具有相同的分布. 因此若 $U \sim \mathcal{U} (0, 1)$, 則 $X = -\theta \log U \sim \exp (\theta)$. 
+		
+		
+		\subsubsection{泊松分佈 (Poisson Distribution)}
+		
+		\begin{itemize}
+			\item $x \in \mathbb{N}^{+}$ 有泊松分佈, 如果: 
+		\end{itemize}
+		
+		$$
+		f (x)=e^{-\lambda} \frac{\lambda^{x}}{x!}
+		$$
+		
+		\begin{itemize}
+			\item 泊松隨機變數的期望與變異數分別為 $\mathbb{E} (x) = \lambda$ 和 $\operatorname{var} (x) = \lambda$
+			\item 若已取得來自指數分布的樣本, 則泊松分佈抽樣是直接的.
+		\end{itemize}
+		
+		
+		\subsubsection{反正弦定律分布 (Arcsine Law Distribution)}
+		
+		\begin{itemize}
+			\item 標準布朗運動在區間 $[0, 1]$ 上達到其最大值 (或最小值)的時間所服從的分布. 
+		\end{itemize}
+		
+		
+		$$
+		F (x)=\frac{2}{\pi} \arcsin (\sqrt{x}) \quad 0 \leq x \leq 1
+		$$
+		
+		\begin{itemize}
+			\item 從此分布中抽樣的反變換法為: 
+		\end{itemize}
+		
+		
+		$$
+		\begin{aligned}
+			X & =\sin ^{2}\left (\frac{U \pi}{2}\right), \quad U \sim \mathcal{U} (0, 1) \\
+			& =\frac{1}{2}-\frac{1}{2} \cos (\pi U)
+		\end{aligned}
+		$$
+		
+		\subsubsection{尋找 $F^{-1}$ 的方法}
+		
+		\begin{itemize}
+			\item 若 CDF 的反函數無解析表示, 可透過以下方式尋找反函數: 
+			\begin{itemize}
+				\item 數值方式；例如: 已知特徵函數, 先數值計算其 CDF, 再建立查找表. 
+				\item 找到一個非常有效率的 CDF 解析近似；本章稍後將以標準常態分布為例說明. 然而通過數值方式計算 CDF 以產生隨機樣本的過程可能在運算上代價高昂. 
+			\end{itemize}
+		\end{itemize}
+		
+		
+		\subsection{接受-拒絕方法 (Acceptance-Rejection Method)}
+		\begin{itemize}
+			\item 在大多數情況下, 若我們無法取得反函數的解析形式, 通常不會採用反變換法, 而會改用接受–拒絕方法.
+			\item 假設我們希望從定義在 $\mathcal{A}$ 上的機率密度函數 $f$ 中產生樣本.
+			\item 設 $g$ 為定義在 $\mathcal{A}$ 上的一個密度函數, 且我們知道如何輕鬆地從中抽樣.
+		\end{itemize}
+		
+		$$
+		f (x) \leq c g (x) \text { 對於所有 } x \in \mathcal{A}
+		$$
+		
+		此處 $c>1$ 是 $\frac{f (x)}{g (x)}$ 的一個合理邊界. 
+		
+		\begin{itemize}
+			\item 為了應用接受–拒絕方法, 先從 $g$ 中產生一個樣本 $X$, 並以機率 $\frac{f (X)}{c g (X)}$ 接受該樣本.
+			\item 可透過從 $\mathcal{U} (0, 1)$ 抽樣一個 $U$, 並在 $U \leq \frac{f (X)}{c g (X)}$ 時接受 $X$, 來輕鬆實施. 
+			\item 若 $X$ 被拒絕, 則重新從 $g$ 中抽樣一個新候選值, 並再次執行接受程序.
+			\item 重複此過程, 直到通過接受測試為止.
+			\item 被接受的值即作為從 $f$ 分布中抽樣得到的樣本返回.
+		\end{itemize}
+		
+		
+		\begin{tcolorbox}[width=\linewidth, colframe=OliveGreen, title=Algorithm]
+			\begin{enumerate}
+				\item   從 $g$ 生成 $X$
+				\item 從 $\mathcal{U} (0, 1)$ 生成 $U$
+				\item 若 $U \leq \frac{f (X)}{c g (X)}$, \\
+				則接受並返回 $X$；\\
+				否則\\
+				拒絕該值並回到第1步.
+				\item 因此, 每次透過接受–拒絕法生成樣本, 至少需要從 $g$ 中抽一個樣本, 並從 $\mathcal{U} (0, 1)$ 抽一個樣本, 另加上每次被拒絕的攤銷成本.
+			\end{enumerate}
+		\end{tcolorbox}
+		
+		
+		\begin{tcolorbox}[width=\linewidth, colframe=OliveGreen, title=Lemma]
+			$$
+			P\left (X \leq x \left\lvert\, U \leq \frac{f (X)}{\operatorname{cg} (X)}\right.\right)=F (x)
+			$$
+		\end{tcolorbox}
+		
+		
+		
+		\subsubsection{通過接受-拒絕得到的標準正態 (Standard Normal via AR)}
+		\begin{itemize}
+			\item 我們希望從 $Z \sim \mathcal{N} (0, 1)$ 中生成樣本.
+			\item 若能從 $|Z|$ 中生成樣本, 則由於對稱性, 可以通過額外生成一個隨機變數 $S$ 來決定樣本符號為正或負 (機率皆為 $\frac{1}{2}$), 再設 $Z = S|Z|$
+			\item 從 $\mathcal{U} (0, 1)$ 生成一個 $U$
+			\begin{itemize}
+				\item 若 $U < \frac{1}{2}$, 則設 $Z = |Z|$
+				\item 若 $U > \frac{1}{2}$, 則設 $Z = -|Z|$
+			\end{itemize}
+			\item $|Z|$ 是單邊、非負的隨機變數, 其機率密度函數為: 
+		\end{itemize}
+		
+		
+		$$
+		f (x)=\frac{2}{\sqrt{2 \pi}} e^{-\frac{x^{2}}{2}}
+		$$
+		
+		\begin{itemize}
+			\item 自然的選擇是 $g (x) = e^{-x}, \ x \geq 0$, 即期望為 1 的指數分布密度函數
+			\item 為了使用接受–拒絕方法, 我們需要找到一個常數 $c > 1$, 使得對所有 $x \geq 0$ 有 $f (x) < c g (x)$. 為此我們定義: 
+		\end{itemize}
+		
+		
+		$$
+		h (x)=\frac{f (x)}{g (x)}=\sqrt{2 / \pi} e^{x-\frac{x^{2}}{2}}
+		$$
+		
+		\begin{itemize}
+			\item $h (x)$ 的最大值出現在 $x = 1$
+			\item 因此 $c = \sqrt{2e / \pi}$, 所以: 
+		\end{itemize}
+		
+		
+		$$
+		\frac{f (x)}{c g (x)}=e^{- (x+1)^{2}/ 2}
+		$$
+		
+		\begin{itemize}
+			\item 使用接受–拒絕方法生成 $Z$ 的算法如下: 
+			
+			\begin{enumerate}
+				\item 從分布 $g$ 中生成 $X$；也就是生成 $U \sim \mathcal{U} (0, 1)$, 然後令 $X = -\ln (U)$.
+				\item 再生成 $U \sim \mathcal{U} (0, 1)$.
+				\item 若 $U < e^{- (X-1)^2 / 2}$, 則設 $|Z| = X$, 否則回到步驟1.
+				\item 再生成 $U \sim \mathcal{U} (0, 1)$, 若 $U < 0.5$, 則設 $Z = |Z|$, 否則設 $Z = -|Z|$.
+			\end{enumerate}
+		\end{itemize}
+		
+		
+		\begin{itemize}
+			\item $U<e^{- (X-1)^{2} / 2}$ iff $ (X-1)^{2} / 2<-\ln U$
+			\item $-\ln U$ 是一個指數, 且期望為 1. 
+			\item 可以簡化上述演算法: 
+			
+			\begin{enumerate}
+				\item 從分布 $g$ 中生成兩個彼此獨立的 $X_{1}$ 和 $X_{2}$；也就是從 $\mathcal{U} (0, 1)$ 中生成 $U_{1}$ 和 $U_{2}$, 然後令 $X_{1} = -\ln (U_{1})$, $X_{2} = -\ln (U_{2})$
+				\item 若 $X_{2} > \left (X_{1} - 1\right)^2 / 2$, 則設 $|Z| = X_{1}$, 否則回到步驟 1
+				\item 生成 $U \sim \mathcal{U} (0, 1)$, 若 $U < 0.5$, 則設 $Z = |Z|$, 否則設 $Z = -|Z|$
+			\end{enumerate}
+		\end{itemize}
+		
+		\begin{center}
+			\includegraphics[max width=\textwidth]{AR}
+		\end{center}
+		
+		\subsubsection{一個有趣的發現 (An Interesting Observation)}
+		\begin{itemize}
+			\item 指數分布的無記憶性質.
+			\item 在步驟2中, 當 $X_{1}$ 被接受時, $X_{2}$ 超過 $\left (X_{1} - 1\right)^2 / 2$ 的部分, 即 $X \doteq X_{2} - \left (X_{1} - 1\right)^2 / 2$, 服從期望為 1 的指數分布.
+			\item 此分布與 $X_{1}$ 無關.\\
+			$\rightarrow$ 可免費得到一個獨立的指數分布樣本, 若我們想生成另一個獨立的 $\mathcal{N} (0, 1)$, 這個樣本可以作為步驟 1 中所需的兩個樣本之一
+			\item 重複使用此演算法後, 平均每產生一個 $Z$ 所需的均勻分布樣本數為 2.64.
+			\item $ (2c + 1) - 1 = 2c \approx 2.64$.
+		\end{itemize}
+		
+		
+		\textbf{$p$ versus $c$}
+		
+		使用幾何分佈, 有: 
+		
+		\begin{itemize}
+			\item $p (X=k)= (1-p)^{k-1} p$
+			\item $\mathbb{E} (X)=\frac{1}{p}=c$
+		\end{itemize}
+		
+		\subsubsection{通過接受-拒絕法得到的泊松分佈 (Poisson Distribution via AR)}
+		\begin{itemize}
+			\item $x \in \mathbb{N}^{+}$ 有一個泊松分佈, 如果: 
+		\end{itemize}
+		
+		$$
+		f (x)=e^{-\lambda}\frac{\lambda^x}{x!}
+		$$
+		
+		\begin{itemize}
+			\item $x$ 可以解釋為單位時間內的到達次數.
+			\item $x_{1}, x_{2}, \ldots$ 服從期望為 $\theta = \frac{1}{\lambda}$ 的指數分布, 在單位時間內有 $\lambda$ 次到達.
+			\item 若單位時間內有 $n$ 次到達, 則前 $n$ 個觀測值的到達時間總和必須小於或等於 1.
+			\item 若再加上一個到達時間, 其總和將大於1 (即超出單位時間).
+			\item 跳躍間的時間可通過$\frac{-1}{\lambda} \log U_{i}$ 生成, 其中 $U_{i} \sim \mathcal{U} (0, 1)$
+		\end{itemize}
+		
+		
+		$$
+		\begin{array}{r}
+			\sum_{i=1}^{n} \frac{-1}{\lambda} \log U_{i}^{} \leq 1<\sum_{i=1}^{n+1} \frac{-1}{\lambda} \log U_{i} \\
+			\log \prod_{i=1}^{n} U_{i} \geq-\lambda>\log \prod_{i=1}^{n+1} U_{i} \\
+			\prod_{i=1}^{n} U_{i} \geq e^{-\lambda}>\prod_{i=1}^{n+1} U_{i}
+		\end{array}
+		$$
+		
+		\begin{itemize}
+			\item 使用接受–拒絕方法從泊松分佈中生成一個樣本: 
+			
+			\begin{enumerate}
+				\item 設定 $n = 0, \ p = 1$
+				\item 產生一個隨機數 $U_{n+1}$, 並更新 $p$ 為 $p \times U_{n+1}$
+				\item 若 $p < e^{-\lambda}$, 則接受 $x = n$, 表示在此單位時間內有 $n$ 次到達
+				\item 否則拒絕當前的 $n$, 令其加一, 回到步驟 2
+			\end{enumerate}
+		\end{itemize}
+		
+		
+		問: 平均需要多少個隨機數才能生成一個泊松變量？
+		
+		\begin{itemize}
+			\item 如果 $x=n$, 那麼需要 $n+1$ 個隨機數. 
+			\item 當 $\lambda > 15$ 時, 接受-拒絕法會變得過於昂貴. 
+			\item 對於較大的 $\lambda$, 可以使用常態分布來近似 Poisson 分布. 
+			\item 當 $\lambda$ 較大時: 
+		\end{itemize}
+		
+		
+		$$
+		Z=\frac{x-\lambda}{\sqrt{\lambda}}
+		$$
+		
+		大致服從標準正態分佈 $\mathcal{N} (0, 1)$
+		
+		\begin{itemize}
+			\item 因此, 可使用 $x = \lceil \lambda + \sqrt{\lambda} Z - 0.5 \rceil$ 來生成一個泊松分佈隨機變數. 
+			\item $\lceil x \rceil$ 表示將 $x$ 向上取整為不小於 $x$ 的最小整數. 
+			\item 這也是為什麼要在括號內減去 $0.5$ 的原因. 
+		\end{itemize}
+		
+		\section{正態隨機變量 (Normal Random Variable)}
+		\subsection{一元標準正態隨機變量 (Univariate Standard Normal R.V.)}
+		\begin{itemize}
+			\item 有理近似
+			\item 波克斯-穆勒方法
+			\item 瑪薩格利亞極座標法 (Marsaglia's Polar Method)
+		\end{itemize}
+		
+		\subsection{有理近似 (Rational Approximation)}
+		\begin{itemize}
+			\item 使用有理函數近似法來計算標準常態分佈函數的左尾分位數.
+			\item 回傳標準常態分佈累積反函數的近似值.
+			\item 給定 $p$, 其中 $0 < p < 1$, 會給回滿足 $\Phi^{-1} (p)$ 的近似值 $z$, 亦即滿足 $P (Z \leq z) = p$ 的 $z$, 其中 $Z$ 為來自 $\mathcal{N} (0, 1)$ 的隨機變數.
+			\item 使用有理函數進行最小最大 (minimax) 誤差近似.
+			\item 為 $p$ 定義低區間與高區間.
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			p_{l} & =0.02425 \\
+			p_{h} & =1.0-p_{I}
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item[ (a)] \textcolor{black}{有理近似, 如果 $p < p_l$: }
+			\[
+			q = \sqrt{-2\log (p)}
+			\]
+			\[
+			z = \frac{ ( ( ( ( (c_1 q + c_2) q + c_3) q + c_4) q + c_5) q + c_6)}{ ( ( ( ( (d_1 q + d_2) q + d_3) q + d_4) q + 1))}
+			\]
+			
+			\item[ (b)] \textcolor{black}{有理近似, 如果 $p_l \leq p \leq p_h$: }
+			\[
+			q = p - 0.5
+			\]
+			\[
+			r = q^2
+			\]
+			\[
+			z = \frac{ ( ( ( ( (a_1 r + a_2) r + a_3) r + a_4) r + a_5) r + a_6) q}{ ( ( ( ( (b_1 r + b_2) r + b_3) r + b_4) r + b_5) r + 1)}
+			\]
+			
+			\item[ (c)] \textcolor{black}{有理近似, 如果 $p > p_h$: }
+			\[
+			q = \sqrt{-2\log (1 - p)}
+			\]
+			\[
+			z = -\frac{ ( ( ( ( (c_1 q + c_2) q + c_3) q + c_4) q + c_5) q + c_6)}{ ( ( ( ( (d_1 q + d_2) q + d_3) q + d_4) q + 1))}
+			\]
+			
+		\end{itemize}
+		
+		\subsection{波克斯-穆勒方法 (Box-Muller Method)}
+		\begin{itemize}
+			\item $X$ 和 $Y$ i.i.d. $\mathcal{N} (0, 1)$ 且有共同 PDF: 
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			f (x, y) & =\frac{1}{\sqrt{2 \pi}} e^{-x^{2} / 2} \frac{1}{\sqrt{2 \pi}} e^{-y^{2} / 2} \\
+			& =\frac{1}{2 \pi} e^{-\frac{x^{2}+y^{2}}{2}}
+		\end{aligned}
+		$$
+		
+		及
+		
+		$$
+		\int_{-\infty}^{\infty} \int_{-\infty}^{\infty} \frac{1}{2 \pi} e^{-\frac{x^{2}+y^{2}}{2}} d x d y=1
+		$$
+		
+		\begin{itemize}
+			\item 變量的變化: 
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			R^{2} & =X^{2}+Y^{2} \\
+			\theta & =\arctan \left (\frac{Y}{X}\right)
+		\end{aligned}
+		$$
+		
+		我們可以看得到: 
+		
+		$$
+		\begin{aligned}
+			& X=R \cos (\theta) \\
+			& Y=R \sin (\theta)
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item 使用 $d x d y=R d R d \theta$ 以求得: 
+		\end{itemize}
+		
+		$$
+		\int_{0}^{2 \pi} \int_{0}^{\infty} \frac{1}{2 \pi} e^{-\frac{R^{2}}{2}} R d R d \theta=1
+		$$
+		
+		\begin{itemize}
+			\item 另一個對變量的改變 $r=R^{2}$, 在$d r=2 R d R$ 之下
+			\item $X$ 和 $Y$ 可以被寫作為: 
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			& X=\sqrt{r} \cos (\theta) \\
+			& Y=\sqrt{r} \sin (\theta)
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item 最終我們得到: 
+		\end{itemize}
+		
+		$$
+		\int_{0}^{2 \pi} \int_{0}^{\infty} \frac{1}{2 \pi} e^{-\frac{r}{2}} \frac{1}{2} d r d \theta=1
+		$$
+		
+		\begin{itemize}
+			\item 寫共同 PDF 為: 
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			f_{d, \Theta} (r, \theta) & =\frac{1}{2 \pi} \frac{1}{2} e^{-r / 2} \\
+			& =\frac{1}{2} e^{-r / 2} \frac{1}{2 \pi} \\
+			& =f_{d} (r) f_{\Theta} (\theta)
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item $f_{d} (r)$ 是 $\exp (2)$ 的 pdf
+			\item $f_{\Theta} (\theta)$ 是 $\mathcal{U} (0, 2 \pi)$ 的 pdf
+			
+			\item 生成 $U_{1}$ 和 $U_{2}$, 
+			
+			\begin{itemize}
+				
+				\item  使其為獨立同分布的 $\mathcal{U} (0, 1)$ 隨機變數
+				
+				\item $X=\sqrt{-2 \ln U_{1}} \cos \left (2 \pi U_{2}\right)$, $Y=\sqrt{-2 \ln U_{1}} \sin \left (2 \pi U_{2}\right)$
+			\end{itemize}
+			
+			\item $-2 \ln U_{1}$ 是一個均值為 $2$ 的指數分布樣本, $2 \pi U_{2}$ 是從 $\mathcal{U} (0, 2 \pi)$ 中取樣的.
+			\item 波克斯-穆勒方法實際上會生成一對獨立的標準常態隨機變數
+			\item 儘管此方法有效, 但計算上可能較昂貴, 因為計算 $\sin$ 和 $\cos$ 一般是較耗資源的操作. 
+		\end{itemize}
+		
+		\subsection{瑪薩格利亞極坐標法 (Marsaglia Polar Method)}
+		\begin{itemize}
+			\item 是波克斯-穆勒方法的改進版本. 
+			\item 在瑪薩格利亞極坐標法中, 避免了對三角函數 (如 $\sin$, $\cos$)的計算, 從而減少了運算成本.
+			\item 考慮 $v_{1}$ 和 $v_{2}$ 為兩個獨立的 $\mathcal{U} (-1, 1)$ 隨機變量.
+			\item 可以證明, 對於滿足 $v_{1}^{2}+v_{2}^{2}<1$ 的 $v_{1}$ 和 $v_{2}$, 可以進行相應的變換.
+		\end{itemize}
+		
+		
+		$$
+		\binom{S}{\theta}=\binom{v_{1}^{2}+v_{2}^{2}}{\frac{1}{2 \pi} \arctan \left (\frac{v_{2}}{v_{1}}\right)}
+		$$
+		
+		生成了兩個在 $[0, 1]$ 上的均一分佈的隨機變量的 $S$ 和 $\theta$. 
+		
+		\begin{itemize}
+			\item i.e. $S \sim \mathcal{U} (-1, 1)$
+		\end{itemize}
+		
+		\begin{itemize}
+			\item 向量 $\left (v_{1}, v_{2}\right)$ 的角度也是均勻分布的, 可用於計算 $\cos (\theta)$ 和 $\sin (\theta)$.
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			& \sin \theta_{} {=} \frac{v_2}{\left (v_{1}^{2}+v_{2}^{2}\right)^{1 / 2}} \\
+			& \cos \theta=\frac{v_{1}}{\left (v_{1}^{2}+v_{2}^{2}\right)^{1 / 2}}
+		\end{aligned}
+		$$
+		
+		可以生成兩個獨立的正態變量, 如下: 
+		
+		
+		\begin{itemize}
+			\item 生成 $v_{1}$ 和 $v_{2}$, 使其為獨立同分布的 $\mathcal{U} (-1, 1)$ 隨機變數.
+			\item 設 $S = v_{1}^{2} + v_{2}^{2}$.
+			\item 若 $S > 1$, 則重新開始.
+		\end{itemize}
+		
+		否則: 
+		
+		$$
+		\begin{aligned}
+			& x=v_{1} \sqrt{\frac{-2 \ln S}{S}} \\
+			& y=v_{2} \sqrt{\frac{-2 \ln S}{S}}
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item 拒絕是由條件 $S \leq 1$ 控制的
+			\item $S$ 被接受的機率, 即單位圓在正方形 $[0, 1] \times [0, 1]$ 內的面積與該正方形面積的比值, 是
+		\end{itemize}
+		
+		
+		$$
+		P (S<1) \approx 0.785
+		$$
+		
+		\begin{itemize}
+			\item 即大約有 $21\%$ 的均勻樣本 $v_{1}$ 和 $v_{2}$ 會被拒絕.
+			\item 儘管如此, 該演算法仍然更高效.
+		\end{itemize}
+		
+		
+		\subsection{比較 (Comparisons)}
+		
+		\begin{center}
+			\begin{tabular}{lr}
+				\hline\hline
+				method & elapsed time (milliseconds) \\
+				\hline
+				acceptance-rejection on conm & 26, 095 \\
+				Box-Muller & 15, 077 \\
+				Marsaglia polar & 7, 785 \\
+				rational approximation & 5, 458 \\
+				\hline
+			\end{tabular}
+		\end{center}
+		\captionof{table}{Elapsed time for sampling 100, 000, 000 standard normal random variables}
+		
+		\section{多元隨機變量 (Multivariate Random Variable)}
+		\subsection{基礎 (Basics)}
+		\[
+		\varphi (x) = \frac{1}{\sqrt{2\pi}} e^{-\frac{1}{2}x^2}
+		\]
+		
+		\[
+		\Phi (x) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{x} e^{-\frac{1}{2}u^2} \, du
+		\]
+		
+		\[
+		\text{若 } z \sim \mathcal{N} (0, 1) \text{, 則 } x = \mu + \sigma z \sim \mathcal{N} (\mu, \sigma^2)
+		\]
+		
+		一個 $d$ 維的常態分布由一個 $d$ 維向量 $\mu$ 和一個 $d \times d$ 協方差矩陣 $\Sigma$ 所描述, 其中 $\Sigma$ 是對稱且半正定的. 
+		
+		
+		\[
+		\Sigma = 
+		\begin{pmatrix}
+			\Sigma_{11} & \cdots & \Sigma_{1d} \\
+			\vdots & \ddots & \vdots \\
+			\Sigma_{d1} & \cdots & \Sigma_{dd}
+		\end{pmatrix}
+		\]
+		
+		可以被分解和寫作如下: 
+		
+		\[
+		\Sigma = \sigma \Lambda \sigma = 
+		\begin{pmatrix}
+			\sigma_1 & & \\
+			& \ddots & \\
+			& & \sigma_d
+		\end{pmatrix}
+		\begin{pmatrix}
+			1 & \cdots & \rho_{1d} \\
+			\vdots & \ddots & \vdots \\
+			\rho_{d1} & \cdots & 1
+		\end{pmatrix}
+		\begin{pmatrix}
+			\sigma_1 & & \\
+			& \ddots & \\
+			& & \sigma_d
+		\end{pmatrix}
+		\]
+		
+		其中 $\Lambda$ 是相關矩陣, $\sigma_i$ 是第 $i$ 維的標準差. 
+		
+		一個 $d$ 維正態分布具有以下的機率密度函數: 
+		
+		\[
+		f (x) = \frac{1}{\sqrt{ (2\pi)^d \det (\Sigma)}} \exp\left ( -\frac{1}{2} (x - \mu)^\top \Sigma^{-1} (x - \mu) \right)
+		\]
+		
+		$$
+		\phi_{\mu, \Sigma} (x)=\frac{1}{ (2 \pi)^{d / 2}|\Sigma|^{1 / 2}} e^{-\frac{1}{2} (x-\mu)^{\top} \Sigma^{-1} (x-\mu)}
+		$$
+		
+		\subsection{科列斯基分解 (Cholesky Factorization)}
+		\begin{itemize}
+			\item 若 $z \sim \mathcal{N} (0, I)$ 且 $x = \mu + A z$, 則 $x \sim \mathcal{N}\left (\mu, A A^{\top}\right)$. 
+			\item 從多元常態分布 $\mathcal{N} (\mu, \Sigma)$ 中取樣的問題可轉化為尋找一個矩陣 $A$, 使得 $A A^{\top} = \Sigma$. 
+			\item 矩陣 $A$ 並非唯一, 其中下三角矩陣較為方便, 因為它可將 $\mu + A z$ 的計算簡化為: 
+		\end{itemize}
+		
+		
+		\[
+		\begin{aligned}
+			x_1 &= \mu_1 + a_{11} z_1 \\
+			x_2 &= \mu_2 + a_{21} z_1 + a_{22} z_2 \\
+			&\vdots \\
+			x_d &= \mu_d + a_{d1} z_1 + a_{d2} z_2 + \cdots + a_{dd} z_d
+		\end{aligned}
+		\]
+		
+		\begin{itemize}
+			\item 滿足 $A A^{\top}=\Sigma$  的下部三角 $A$ 可以通過科列斯基分解得到. 
+		\end{itemize}
+		
+	\end{document}
