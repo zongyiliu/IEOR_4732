@@ -1,0 +1,1276 @@
+\documentclass[letterpaper]{article} 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{ctex} 
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage[dvipsnames]{xcolor}
+\colorlet{LightRubineRed}{RubineRed!70}
+\colorlet{Mycolor1}{green!10!orange}
+\definecolor{Mycolor2}{HTML}{00F9DE}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{lipsum}
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage[export]{adjustbox}
+\graphicspath{ {./images/} }
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{tcolorbox}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref} 
+\usepackage{xcolor} % For custom colors
+\lstset{
+	language=Python,                % Choose the language (e.g., Python, C, R)
+	basicstyle=\ttfamily\small, % Font size and type
+	keywordstyle=\color{blue},  % Keywords color
+	commentstyle=\color{gray},  % Comments color
+	stringstyle=\color{red},    % String color
+	numbers=left,               % Line numbers
+	numberstyle=\tiny\color{gray}, % Line number style
+	stepnumber=1,               % Numbering step
+	breaklines=true,            % Auto line break
+	backgroundcolor=\color{black!5}, % Light gray background
+	frame=single,               % Frame around the code
+}
+\usepackage{float}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+	\usepackage[]{amssymb} %gives us the character \varnothing
+	
+	\title{Lecture 4, IEOR 4732\\
+		\small{Derivatives pricing using Numerical Methods of PDEs\\使用偏微分方程的數值方法進行定價
+	}}
+	\author{Zongyi Liu}
+	\date{Thu, Feb 13, 2025}
+	\begin{document}
+		\maketitle
+		\tableofcontents
+		\section{日程 (Agenda)}
+		\begin{itemize}
+			\item 通過微分方程的數值解求得衍生品價格
+			\begin{itemize}
+				\item 不同的格式 (schemes): explicit, implicit, C-N
+				\item 邊值條件
+				\item 決定性跳躍 (deterministic jumps) 的執行
+				\item 關鍵點 (critical points)
+				\item 非均一網格 (non-uniform grids)
+			\end{itemize}
+			\item 高維定價
+		\end{itemize}
+		
+		\section{泛化的 B-M-S 微分方程 (Generalized B-M-S PDE)}
+		\subsection{從 B-M-S 微分方程到泛化的 B-M-S 微分方程 (B-M-S PDE to Generalized B-M-S PDE)}
+		
+		之前知道的 SDE 為: 
+		
+		$$
+		d S_{t}= (r-q) S_{t} d t+\sigma S_{t} d W_{t}
+		$$
+		
+		滿足 BMS 偏微分方程的期權值為: 
+		
+		$$
+		\frac{\partial v}{\partial t}+\frac{\sigma^{2} S^{2}}{2} \frac{\partial^{2} v}{\partial S^{2}}+ (r-q) S \frac{\partial \hat{v}}{\partial S}=r v (S, t)
+		$$
+		
+		擴展: 
+		
+		$$
+		d S_{t}=\left (r_{ ( } (t)-q (t)\right) S_{t} d t+\sigma\left (S_{t}, t\right) S_{t} d W_{t}
+		$$
+		
+		$r (t)$ 和 $q (t)$ 是時間的決定性方程, $\sigma\left (S_{t}, t\right)$ 是一個決定性波動函數 (deterministic volatility function) (也即為 \underline{本地波動曲面}), 期權的值滿足泛化的 B-M-S PDE.
+		
+		$$
+		\frac{\partial v}{\partial t}+\frac{\sigma\left (S_{t}, t\right)^{2} S^{2}}{2} \frac{\partial^{2} v}{\partial S^{2}}+ (r (t)-q (t)) S \frac{\partial v}{\partial S}=r (t) v (S, t)
+		$$
+		
+		\subsection{泛化的 B-M-S PDE 下的期權價格 (Option Pricing under the Generalized B-M-S PDE)}
+		$$
+		\left\{\begin{array}{l}
+			\frac{\partial v}{\partial t}+\frac{\sigma (S, t)^{2} S^{2}}{2} \frac{\partial^{2} v}{\partial S^{2}}+ (r (t)-q (t)) S \frac{\partial v}{\partial S}=r (t) v (S, t) \\
+			v (S, T)=f (S) \text {終端條件 (收益函數)} \\
+			\text {邊界條件 }
+		\end{array}\right.
+		$$
+		
+		變量 $\tau=T-t$ 的變化即到達成熟的時間. 
+		
+		$$
+		\begin{aligned}
+			\hat{v} (S, \tau) & =v (S, t) \\
+			\hat{\sigma} (S, \tau) & =\sigma (S, t) \\
+			\hat{r} (\tau) & =r (t) \\
+			\hat{q} (\tau) & =q (t)
+		\end{aligned}
+		$$
+		
+		然後我們會有: 
+		
+		$$
+		\left\{\begin{array}{l}
+			-\frac{\partial \hat{v}}{\partial \tau}+\frac{\hat{\sigma} (S, \tau)^{2} S^{2}}{2} \frac{\partial^{2} \hat{v}}{\partial S^{2}}+\left (\hat{r} (\tau)- (\hat{q} (\tau)) S \frac{\partial \hat{v}}{\partial S}=\hat{r} (\tau) \hat{v} (S, \tau)\right. \\
+			\hat{v} (S, 0)=f (S) \text { 初始條件 (收益函數) } \\
+			\text { 邊界條件}
+		\end{array}\right.
+		$$
+		
+		\[
+		\bar{D} =
+		\left\{
+		\begin{aligned}
+			S_j &= S_{\min} + (j-1) \Delta S, \quad \Delta S = \frac{S_{\max} - S_{\min}}{N}, \quad j = 1, \dots, N+1 \\
+			\tau_k &= 0 + (k-1) \Delta \tau, \quad \Delta \tau = \frac{T - 0}{M}, \quad k = 1, \dots, M+1
+		\end{aligned}
+		\right.
+		\]
+		
+		
+		$$
+		\begin{aligned}
+			v_{j}, k & \approx \hat{v}\left (S=S_{j}, \tau=\tau_{k}\right) \\
+			\sigma_{j, k} & =\hat{\sigma}\left (S_{j}, \tau_{k}\right) \\
+			r_{k} & =\hat{r}\left (\tau_{k}\right) \\
+			q_{k} & =\hat{q}\left (\tau_{k}\right)
+		\end{aligned}
+		$$
+		
+		\subsection{離散化格式 (Discretization Schemes)}
+		根據我們之前在熱傳導公式裡做的, 我們可以使用以下的格式來對泛化布萊克-休斯 PDE 進行離散化. 
+		
+		
+		\begin{itemize}
+			\item 顯性格式 (explicit scheme)
+			\item 隱性格式 (implicit scheme)
+			\item 克蘭克-尼科爾森格式 (Crank-Nicolson scheme)
+		\end{itemize}
+		
+		\subsection{隱性格式 (Implicit Scheme)}
+		$$
+		\hat{l}_{j, k+1} v_{j-1, k+1}+\hat{d}_{j, k+1} v_{j, k+1}+\hat{u}_{j, k+1} v_{j+1, k+1}=v_{j, k} \quad \text { 對於 } j=2, \ldots, N
+		$$
+		
+		在矩陣格式中寫作: 
+		
+		\[
+		A^{\text{Implicit}}_{k+1} V_{k+1} = V_k +
+		\begin{pmatrix}
+			-\hat{l}_{2, k+1} V_{1, k+1} \\
+			0 \\
+			\vdots \\
+			0 \\
+			-\hat{u}_{N, k+1} V_{N+1, k+1}
+		\end{pmatrix}
+		\]
+		
+		\[
+		A^{\text{Implicit}}_{k+1} =
+		\begin{pmatrix}
+			\hat{d}_{2, k+1} & \hat{u}_{2, k+1} & & \\
+			\hat{l}_{3, k+1} & \hat{d}_{3, k+1} & \hat{u}_{3, k+1} & \\
+			& \ddots & \ddots & \ddots \\
+			& & \hat{l}_{N-1, k+1} & \hat{d}_{N-1, k+1} & \hat{u}_{N-1, k+1} \\
+			& & & \hat{l}_{N, k+1} & \hat{d}_{N, k+1}
+		\end{pmatrix}
+		\]
+		
+		\section{邊界和初始條件 (Boundary and Initial Conditions)}
+		\subsection{定義 (Definitions)}
+		\begin{itemize}
+			\item 邊界條件 (boundary condition) 是我們在偏微分方程的格式中唯一被假設 (隱性或顯性) 已知的. 
+			\item 一個邊界條件的選擇對於這個計算的解有深刻的影響. 
+			
+			\item 對於一維空間的 PDE, 邊界條件是 $S_{\text {min }}$ 和 $S_{\text {max }}$ 的倒數的值. 
+			
+			\item 在數值為0時被稱為初始條件 (initial condition). 
+			
+			\item 在絕大多數情況下初始條件是已知的 (payoff at expiration), 即: 
+		\end{itemize}
+		
+		$$
+		v (S, 0)=f (S)
+		$$
+		
+		\begin{itemize}
+			\item 我們對於初始條件和邊界條件有明確的區分. 
+		\end{itemize}
+		
+		\subsection{實施 (Implementation)}
+		\begin{itemize}
+			\item 狄利克雷 (Dirichlet) 邊界條件
+			\item 諾伊曼 (Neumann) 邊界條件
+			\item 混合邊界條件
+		\end{itemize}
+		
+		\subsection{狄利克雷邊界條件 (Dirichlet Boundary Conditions)}
+		\begin{itemize}
+			\item 它得名於德國數學家約翰·彼得·古斯塔夫·狄利克雷 (Johann Peter Gustav Dirichlet, 1805-1859); 狄利克雷出生於法蘭西第一帝國治下的萊茵河左岸迪倫 (Düren, 今屬北威州), 後任教於普魯士戰爭學院, 布雷斯勞大學, 柏林大學, 哥廷根大學, 並在哥廷根病逝. 
+			\item 他顯性地指明了在邊界點上的衍生品數值. 
+			\item 它可以被找出, 或者至少對於$S_{\min }$ 和 $S_{\max }$ 進行估計, 取決於衍生品的收益
+			\item 例如: 
+			
+			\begin{itemize}
+				\item 對於一個在 $S_{\text {min }}$ 的買入權期權, 衍生品收益可以被設置為0 (期權無價值).
+				
+				
+				\item 對於一個在 $S_{\text {max }}$ 的賣出權期權, 衍生品的收益可以設置為0, 如果 $S_{\text {max }}$ 足夠大. 
+				
+				\item 障礙期權 (barrier options), 對於在障礙上的期權的值是明確已知去被回扣 (rebate) 的如果存在; 否則就設置其為0. 
+				
+			\end{itemize}
+			\item 可以估算狄利克雷邊界條件, 對於 $S_{\max }$ 上的買入價值和 $S_{\min }$ 上的賣出價值, 取決於其期權類型. 
+			\item 對於美式期權, 就簡單設置期權價值為它的收益: 
+			
+			$$
+			\begin{aligned}
+				& C\left (S_{\text {max }}\right)=S_{\text {max }}-K \\
+				& P\left (S_{\text {min }}\right)^{\prime 2} K-S_{\text {min }}
+			\end{aligned}
+			$$
+			\item 對於歐式期權, 設置期權價值為它的收益, 但是這個等級要考慮到時間價值對於執行價格和分紅的貼現, 即: 
+			
+			$$
+			\begin{aligned}
+				C\left (S_{\max }\right) & =S_{\max } e^{-q T}-K e^{-r T} \\
+				P\left (S_{\min }\right) & =K e^{-r T}-S_{\min } e^{-q T}
+			\end{aligned}
+			$$
+			\item 然而這個應該被特別注意, 因為在高度波動狀態下, 一個買入權的價格等級可能會超過它的收益. 
+			
+		\end{itemize}
+		
+		
+		\subsection{諾伊曼邊界條件 (Neumann Boundary Conditions)}
+		\begin{itemize}
+			\item 它得名於德國數學家卡爾·諾伊曼 (Carl Neumann, 1832-1925); 諾伊曼出生於普魯士王國東普魯士哥尼斯堡, 後擔任萊比錫大學教授達半個世紀, 退休後居住於萊比錫並於此逝世. 
+			\item 它明晰了在邊界上的期權的偏導數. 
+			\item 它可以在 $S_{\min }$ 和 $S_{\text {max }}$ 處被使用. 
+			\item 這個可以十分高效, 因為期權收益的一階導 $ (\Delta)$ 和二階導 $ (\Gamma)$ 通常都是已知條件. 
+			\item 通常使用: 
+		\end{itemize}
+		
+		$$
+		\frac{\partial^{2} v}{\partial S^{2}}\left (S_{\min }, \tau\right)=0
+		$$
+		
+		和/或: 
+		
+		$$
+		\frac{\partial^{2} v}{\partial S^{2}}\left (S_{\max }, \tau\right)=0
+		$$
+		
+		我們應當注意, 如果我們嘗試使用在 $S_{\min }$ 或 $S_{\text {max }}$ 上的中心差值 (central difference), 這會導致一個超出我們網格的網格點. 相反如果我們使用對左側邊界 ($S_{\text {min }}$) 的向前差值 (forward difference), 我們會得到: 
+		
+		$$
+		\begin{aligned}
+			\frac{\partial^{2} v}{\partial S^{2}}\left (S_{m i n}, \tau_{k+1}\right) & =\frac{\partial^{2} v}{\partial S^{2}}\left (S_{1}, \tau_{k+1}\right) \\
+			& =\frac{v_{1, k+1}-2 v_{2, k+1}+v_{3, k+1}}{h^{2}}+O (h)
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item 我們無法得到在邊界點上對於第二個導數的二階近似, 除非我們在近似中使用4個點. 
+			
+			\item 不再是三對角 (tridiagonal)
+			\item 我們可以質疑 (argue) $\Gamma$ 在邊界是否為0, 它也可以在鄰近的點被假設為0.
+		\end{itemize}
+		
+		$$
+		\frac{\partial^{2} v}{\partial S^{2}}\left (S_{\min }+\Delta S, \tau\right)=0
+		$$
+		
+		和/或
+		
+		$$
+		\frac{\partial^{2} v}{\partial S^{2}}\left (S_{\max }-\Delta S, \tau\right)=0
+		$$
+		
+		\begin{itemize}
+			\item 對就在邊界條件鄰近的內部點使用中央差值近似. 
+			\item 通過此我們可以得到一個二階準確值 (accuracy).
+			\item 對於剛性 (stiffness) 矩陣, 保留三對角 (tridiagonal) 結構. 
+			\item 對於每一個邊界點, 我們使用它鄰近的點作為參照. 
+			
+		\end{itemize}
+		
+		使用中心差值近似法: 
+		
+		$$
+		\begin{aligned}
+			& \frac{\partial^{2} v}{\partial S^{2}}\left (S_{\text {min }}+\Delta S, \tau_{k+1}\right)=\frac{\partial^{2} v}{\partial S^{2}}\left (S_{2}, \tau_{k+11}\right) \\
+			& =\frac{v_{1, k+3}+2 v_{2, k+1}+v_{3, k+1}}{h^{2}}+O\left (h^{2}\right)
+		\end{aligned}
+		$$
+		
+		設定其為0, 我們可得: 
+		
+		$$
+		v_{1, k+1}-2 v_{2, k+1}+v_{3, k+1}=0
+		$$
+		
+		或者等價地: 
+		
+		$$
+		v_{1, k+1}=2 v_{2, k+1}-v_{3, k+1}
+		$$
+		
+		\subsection{左側邊界 (Left Boundary)}
+		
+		將其帶入差值等式 $j=2$, 則有: 
+		
+		\[
+		\begin{aligned}
+			\hat{l}_{2, k+1} v_{1, k+1} + \hat{d}_{2, k+1} v_{2, k+1} + \hat{u}_{2, k+1} v_{3, k+1} &= v_{2, k} \\
+			\hat{l}_{2, k+1} \left ( 2v_{2, k+1} - v_{3, k+1} \right) + \hat{d}_{2, k+1} v_{2, k+1} + \hat{u}_{2, k+1} v_{3, k+1} &= v_{2, k} \\
+			\left ( \hat{d}_{2, k+1} + 2\hat{l}_{2, k+1} \right) v_{2, k+1} + \left ( \hat{u}_{2, k+1} - \hat{l}_{2, k+1} \right) v_{3, k+1}& = v_{2, k}
+		\end{aligned}
+		\]
+		
+		
+		\subsection{右側邊界 (Right Boundary)}
+		使用中心差值近似, 我們可以求得上界: 
+		
+		
+		$$
+		v_{N-1, k+1}-2 v_{N, k+1}+v_{N+1, k+1} 1=0
+		$$
+		
+		或者等價地: 
+		
+		$$
+		v_{N+1, k+1} =2 v_{N, k+1}-v_{N-1, k+1}
+		$$
+		
+		將其帶入差分等式 (1) 對於 $j=N$, 我們可得: 
+		
+		$$
+		\begin{aligned}\hat{l}_{N, k+1} v_{N-1, k+1}+\hat{d}_{N, k+1} v_{N, k+1}+\hat{u}_{N, k+1}v_{N+1, k+1} & =v_{N, k} \\
+			\hat{l}_{N, k+1} v_{N-1, k+1}+\hat{d}_{N, k+1} v_{N, k+1}+\hat{u}_{N, k+1}\left (2 v_{N, k+1}-v_{N-1, k+1}\right) & =v_{N, k} \\
+			\left (\hat{l}_{N, k+1}-\hat{u}_{N, k+1}\right) v_{N-1, k+1}+\left (\hat{d}_{N, k+1}+2 \hat{u}_{N, k+1}\right) v_{N, k+1} & =v_{N, k}
+		\end{aligned}
+		$$
+		
+		\subsection{諾伊曼和狄利克雷的比較 (Neumann vs. Dirichlet)}
+		\begin{itemize}
+			\item 通常對於同一個邊界, 諾伊曼條件會更準確, 因為二階導數比價格下跌更快. 
+			
+			\item 可以通過案例證實. 
+		\end{itemize}
+		
+		\section{決定性跳躍條件 (Deterministic Jump Condition)}
+		$$
+		V\left (S, t_{d}^{-}\right)=V\left (S-D_{\lambda} t_{d}^{+}\right)
+		$$
+		
+		\begin{itemize}
+			\item $t_{d}^{-}$ 是離散分紅支付前最近的時間點.
+			\item $t_{d}^{+}$ 是離散分紅支付後最近的時間點.
+			\item 到達成熟的時間 $\tau=T-t$.
+		\end{itemize}
+		
+		$$
+		V\left (S, \tau_{d}^{+}\right)=V\left (S-D, \tau_{d}^{-}\right)
+		$$
+		
+		\begin{itemize}
+			\item 調整時間步驟去和分紅支付世界對應 $\tau_{d}$.
+			
+			\item 假設 $\tau_{d}$ 在 $k^{t h}$ 時間步驟發生, i.e., $\tau_{k}=\tau_{d}$.
+			\item 在時間 $\tau_{k}$ 時 (或者更準確地說在 $\tau_{k}^{-}$) 完成了解後, 我們有對所有 $i$, $V_{i, k}^{-}$.
+			\item 在達成 $\tau_{k+1}$ 之前, 期權在 $S_{i}$ 時的價值應該被期權在 $S_{i}-D$ 的價值所取代. 
+			\item 對現在而言, $D=\ell \Delta S$, 此處的 $\ell$ 是一個正整數. 
+		\end{itemize}
+		
+		$$
+		V_{i, k}^{+}=V_{i-\ell, k}^{-}
+		$$
+		
+		\begin{itemize}
+			\item $S_{i}-D$ 不必要在網格上, 所以 $V\left (S, \tau_{i}^{+}\right)$ 可以通過插值法 (interpolation) 求得. 
+		\end{itemize}
+		
+		$$
+		\left.\hat{i}{ }_{c^{d}}=\frac{S_{0}}{S_{i} \cdot \frac{r^{2}-}{}} \right\rvert\, 
+		$$
+		
+		此處 $\lfloor x\rfloor$ 可以把 $x$ 約分為最近的整數 $\leq x$
+		
+		$$
+		\begin{aligned}
+			V_{i, k}^{+}= & V_{\hat{i}, k}^{-}+\frac{V_{\hat{i}+1, k}^{-}-V_{\hat{i}, k}^{-}}{\Delta S}\left (S_{i}-D-\hat{i} \Delta S\right) \\
+			= & (1-\alpha) V_{\hat{i}, k}^{-}+\alpha V_{\hat{i}+1, k}^{-} \\
+			& \alpha=\frac{\left (S_{i}-D-\hat{i} \Delta S\right)}{\Delta S}
+		\end{aligned}
+		$$
+		
+		\begin{tcolorbox}[width=\linewidth, colframe=OliveGreen, title=Pseudo-code]
+			$$
+			\begin{aligned}
+				\text { for } & \quad i=1: N \\
+				& \hat{i}=\left\lfloor\frac{S_{i}-D}{\Delta S}\right\rfloor \\
+				& \alpha=\frac{\left (S_{i}-D-\hat{A} \hat{A} S\right)}{\Delta S} \\
+				& V_{i, k, }^{+}{ }^{}= (1-\alpha) V_{\hat{i}, k}^{-}+\alpha V_{\hat{i}+1, k}^{-} \\
+				\text {end }&
+			\end{aligned}
+			$$
+		\end{tcolorbox}
+		
+		如果 $S_{i}-D$ 在網格之外?
+		
+		\section{不均一網格 (Non-uniform Grids)}
+		\subsection{顯性 (Explicit)}
+		\begin{itemize}
+			\item 我們有網格點 $x_{0}<x_{1}<\cdots<x_{N}$.
+			\item 假設只有一個轉換點 (switching point), 在 $x_{i }$. 
+			\item 對於 $x_{0}<\cdots<x_{i}$ 是均一的 s.t. $h_{1}=x_{j}-x_{j-1}$ 對於所有 $j=1, \ldots, i$
+			\item 對於 $x_{i}<\cdots<x_{N}$ 是均一的 s.t. $h_{2}=x_{j}-x_{j-1}^{\text {ds }}$ 對於所有 $j=i+1, \ldots, N$
+			\item 可以對在 $x_{i}$ 上的 $f_{0}^{ (1)} (x)$ 和 $f^{ (2)} (x)$ 求近似: 
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			& f\left (x_{i}-h_{1}\right)=f\left (x_{i}\right)-h_{1} f^{ (1)}\left (x_{i}\right)+\frac{h_{1}^{2}}{2!} f^{ (2)}\left (x_{i}\right)-\frac{h_{1}^{3}}{3!} f^{ (3)}\left (\xi_{1}\right) \\
+			& f\left (x_{i}^{}+h_{2}\right)=f\left (x_{i}\right)+h_{2} f^{ (1)}\left (x_{i}\right)+\frac{h_{2}^{2}}{2!} f^{ (2)}\left (x_{i}\right)+\frac{h_{2}^{3}}{3!} f^{ (3)}\left (\xi_{2}\right)
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item 對於兩個等式分別乘以 $-h_{2}^{2}$ 和 $+h_{1}^{2}$, 然後加: 
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			-h_{2}^{2} f\left (x_{i}-h_{1}\right)+h_{1}^{2} f\left (x_{i}+h_{2}\right) & =\left (h_{1}^{2}-h_{2}^{2}\right) f\left (x_{i}\right)+\left (h_{1} h_{2}^{2}+h_{1}^{2} h_{2}\right) f^{ (1)} (x) +\frac{h_{1}^{2} h_{2}^{2}}{3!}\left (h_{1} f^{ (3)}\left (\xi_{1}\right)+h_{2} f^{ (3)}\left (\xi_{2}\right)\right)
+		\end{aligned}
+		$$
+		
+		$$
+		\begin{aligned}
+			& f^{ (1)} (x)=-\frac{h_{2}}{h_{1}\left (h_{1}+h_{2}\right)} f\left (x_{i}-h_{1}\right)-\frac{h_{1}-h_{2} h_{2}}{\tau^{2} h_{1} h_{2}} f\left (x_{i}\right)+\frac{h_{1}}{h_{2}\left (h_{1}+h_{2}\right)} f\left (x_{i}+h_{2}\right) \\
+			& -\frac{h_{1} h_{2}}{3!\left (h_{1}+h_{2}\right)}\left (h_{1} f^{ (3)}\left (\xi_{1}\right)+h_{2} f^{ (3)}\left (\xi_{2}\right)\right) \\
+			& \approx-\frac{h_{2}}{h_{1}^{}\left (h_{1}+h_{2}\right)} f\left (x_{i}-h_{1}\right)-\frac{h_{1}-h_{2}}{h_{1} h_{2}} f\left (x_{i}\right)+\frac{h_{1}}{h_{2}\left (h_{1}+h_{2}\right)} f\left (x_{i}+h_{2}\right)
+		\end{aligned}
+		$$
+		
+		對於在 $x_{i}$ 上的 $f^{ (2)} (x)$, 分別乘以 $h_{2}$ 和 $h_{1}$, 然後加: 
+		
+		$$
+		\begin{aligned}
+			& h_{2} f\left (x_{i}-h_{1}\right)+h_{1} f\left (x_{i}+h_{2}\right)=\left (h_{1}+h_{2}\right) f\left (x_{i}\right)+\frac{h_{1} h_{2}\left (h_{1}+h_{2}\right)}{2 e^{ (2)}} (x) 
+			+\frac{h_{1} h_{2}}{3!}\left (h_{1}^{2} f^{ (3)}\left (\xi_{1}\right)+f_{0} h_{2}^{2} f^{ (3)}\left (\xi_{2}\right)\right) \\
+			& f^{ (2)} (x)=\frac{2\left (h_{2} f\left (x_{i}-h_{1}\right)-\left (h_{1}+h_{2}\right) f\left (x_{i}\right)+h_{1} f\left (x_{i}+h_{2}\right)\right)}{h_{1} h_{2}\left (h_{1}+h_{2}\right)}-\frac{2}{3! (h_{1}+h_{2})}\left (h_{1}^{2} f^{ (3)}\left (\xi_{1}\right)+h_{2}^{2} f^{ (3)}\left (\xi_{2}\right)\right) \\
+			& \approx \frac{2\left (h_{2} f\left (x_{i}-h_{1}\right)-\left (h_{1}+h_{2}\right) f\left (x_{i}\right)+h_{1} f\left (x_{i}+h_{2}\right)\right)}{h_{1} h_{2}\left (h_{1}+h_{2}\right)} \\
+			& \text { 且有 } O\left (h_{1}+h_{2}\right)
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item 在一個不等 (non-equal) 網格點中, 三點近似 (three-point approximation) 並不足夠. 
+			
+			\item 需要一個四點近似來求得二階導數近似. 
+			
+		\end{itemize}
+		
+		\subsection{隱性 (Implicit)}
+		
+		\begin{itemize}
+			\item 可以應用一個座標變換, 來求得在關鍵價格附近的更好的網格點, 或者在不重要的點位上更粗糙的網格點. 
+			
+			\item 假設我們對於尋找映射到 $0 \leq \xi \leq 1$ 到 $S_{\min } \leq S \leq S_{\text {max }}$ 上的一個變換感興趣, 且有在 $\xi$ 上的均一網格點和在 $S$ 上的不均一網格點, 這些點集中於在定義域上的某些點 $B$. 
+			
+			\item 有許多完成此的方法: 
+		\end{itemize}
+		
+		$$
+		S (\xi)=B+\alpha \sinh \left (c_{1} \xi+c_{2} (1-\xi)\right)
+		$$
+		
+		\begin{itemize}
+			\item 在此假設下, 我們如果想要: 
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			& S (\xi=0)=S_{\min } \\
+			& S (\xi=1)=S_{\max }
+		\end{aligned}
+		$$
+		
+		則我們應該有: 
+		$$
+		\begin{aligned}
+			& c_{1}=\sinh ^{-1}\left (\frac{S_{\max }-B}{\alpha}\right) \\
+			& c_{2}=\sinh ^{-1}\left (\frac{S_{\min }-B}{\alpha}\right)
+		\end{aligned}
+		$$
+		
+		
+		對應於 $B, S\left (\xi_{B}\right)=B$ 的 $\xi$ 的值則為: 
+		
+		$$
+		\xi_{B}=\frac{c_{2}}{c_{2}-c_{1}}
+		$$
+		
+		\begin{itemize}
+			\item 為了求得一個高度不均一的且圍繞著 $B$ 的網格, $\alpha$ 應該比 $S_{\text {max }}-S_{\text {min }}$ 還要小. 
+			\item 如果我們選擇 $\alpha$ 比 $S_{\max }-S_{\min }$ 大, 我們則會得到一個均一篩網 (mesh).
+		\end{itemize}
+		
+		\includegraphics[max width=0.6\textwidth, center]{NUG}
+		
+		\subsection{$\xi$ 下的B-M-S 偏微分方程 (B-M-S PDE under $\xi$)}
+		$$
+		\frac{\partial v}{\partial t}+\frac{\sigma^{2} S^{2}}{2} \frac{\partial^{2} v}{\partial S^{2}}+ (r-q) S \frac{\partial v}{\partial S}=r v (S, t)
+		$$
+		
+		定義: 
+		
+		$$
+		\bar{v} (\xi, \pi)^{n}=v (S, t)
+		$$
+		
+		此處 $\tau=T-t$ 是達到成熟的時間, 且 $S (\xi)=B+\alpha \sinh \left (c_{1} \xi+c_{2} (1-\xi)\right)$. 使用鏈式法則, 有: 
+		
+		$$
+		\frac{\partial v}{\partial S}=\frac{\partial \bar{v}}{\partial \xi} \cdot \frac{\partial \xi}{\partial S}=\frac{\partial \bar{v}}{\partial \xi} \cdot \frac{1}{\frac{\partial S}{\partial \xi}}
+		$$
+		
+		
+		$$
+		\begin{aligned}
+			& \frac{\partial^{2} v}{\partial S^{2}}=\frac{\partial}{\partial S}\left (\frac{\partial v}{\partial S}\right)=\frac{\partial}{\partial \xi}\left (\frac{\partial v}{\partial S}\right) \cdot \frac{\partial \xi}{\partial S}, \\
+			& =\frac{\partial}{\partial \xi}\left (\frac{\partial \bar{v}}{\partial \xi} \cdot \frac{\partial \xi}{\partial S}\right) \cdot \frac{\partial \xi^{}}{\partial S}=\frac{\partial}{\partial \xi}\left (\frac{\partial \bar{v}}{\partial \xi} \cdot \frac{1}{\partial S}\right) \cdot \frac{1}{\frac{\partial S}{\partial \xi}}\\
+			& =\frac{\partial^2 \bar{v}}{\partial \xi^2} \cdot \frac{1}{\left ( \frac{\partial S}{\partial \xi} \right)^2}
+			- \frac{\partial \bar{v}}{\partial \xi} \cdot \frac{\frac{\partial^2 S}{\partial \xi^2}}{\left ( \frac{\partial S}{\partial \xi} \right)^3}\\
+			\operatorname{} \frac{\partial v}{\partial t}&=-\frac{\partial \bar{v}}{\partial \tau}
+		\end{aligned}
+		$$
+		
+		替代後我們可得: 
+		
+		$$
+		\begin{aligned}
+			& -\frac{\partial \bar{v}}{\partial \tau}+\frac{\sigma^{2} S^{2}}{2}\left (\frac{\partial^{2} \bar{v}}{\partial \xi^{2}} \frac{1}{\left (\frac{\partial S}{\partial \xi}\right)^{2}}-\frac{\partial \bar{v}}{\partial \xi} \cdot \frac{\frac{\partial^{2} \xi}{\partial S^{2}}}{\left (\frac{\partial S}{\partial \xi}\right)^{3}}\right)+\left (r-q \right) S \frac{\partial \bar{v}}{\partial \xi} \cdot \frac{1}{\frac{\partial S}{\partial \xi}}=r \bar{v} \\
+			& -\bar{v}_{\tau}+\frac{\sigma^{2} S (\xi)^{2}}{2}\left (\frac{1}{\frac{\partial S (\xi)}{\partial \xi}}\right)^{2} \bar{v}_{\xi \xi}+\left (\left (r-q\right) S (\xi) \frac{1}{\frac{\partial S (\xi)}{\partial \xi}}-\frac{\sigma^{2} S (\xi)^{2}}{2} \frac{\frac{\partial^{2} S (\xi)}{\partial \xi^{2}}}{\left (\frac{\partial S (\xi)}{\partial \xi}\right)^{3}}\right) \bar{v}_{\xi} -r \bar{v} (\xi, \tau)=0
+		\end{aligned}
+		$$
+		
+		或者僅僅對於 $\xi$, 我們有$S=S (\xi)$, 根據鏈式法則: 
+		$$
+		\begin{gathered}
+			-\frac{\partial \bar{v}}{\partial \tau}+\frac{\sigma^{2}}{2} \frac{S^{2} (\xi)}{J (\xi)} \frac{\partial}{\partial \xi}\left (\frac{1}{J (\xi)} \frac{\partial \bar{v}}{\partial \xi}\right)+ (r-q) \frac{S (\xi)}{J (\xi)} \frac{\partial \bar{v}}{\partial \xi}-r \bar{v}=0 \\
+			J (\xi)=\frac{\partial S (\xi)}{\partial \xi}
+		\end{gathered}
+		$$
+		
+		\section{奇異期權 (Exotic Options)}
+		\subsection{百慕大期權 (Bermudan Options)}
+		這會取如下格式的遞迴等式: 
+		
+		$$
+		\begin{aligned}
+			& V_{k+1}=A_{k+1}^{\text {Explicit }} V_{k} \\
+			& A_{k+1}^{\text {Implicit }} V_{k+1}=V_{k} \\
+			& A_{k+1}^{\text {Implicit }} V_{k+1} {=} A_{k+1}^{\text {Explicit }} V_{k}
+		\end{aligned}
+		$$
+		
+		取決於我們所使用的有限差分格式, 我們實施如下的價格算法: 
+		
+		
+		\begin{tcolorbox}[width=\linewidth, colframe=OliveGreen, title=Pseudo-code]
+			$$
+			\begin{aligned}
+				\text{for }&k=1: M\\
+				&A_{k+1}^{\text {Implicit }} V_{k+1}=V_{k} \\
+				\text{end}& \\
+			\end{aligned}
+			$$
+			
+		\end{tcolorbox}
+		
+		百慕大期權可以通過預先設定的日期執行: 
+		
+		
+		$$
+		V\left (S_{t}, t ; K, T\right)=\max _{t_{e}}\left\{\mathbb{E}\left[e^{-r (T-t)}\left (K-S_{\tau_{e}}\right)^{+}\right]\right\} \quad \text { 對於 }  t_e \in\left\{t_{1}^{\star}, \ldots, t_{\ell}^{*}\right\}
+		$$
+		
+		\begin{tcolorbox}[width=\linewidth, colframe=OliveGreen, title=New Pseudo-code]
+			\[
+			\begin{aligned}
+				&\text{for } k = 1: M \\
+				&\quad A^{\text{Implicit}}_{k+1} v_{k+1} = v_k \\
+				&\quad \text{if } t_{k+1} \in \tau_e \\
+				&\quad\quad \text{for } i = 1: N \\
+				&\quad\quad\quad \text{if } v_i^{k+1} < (S_i - K)^+ \\
+				&\quad\quad\quad\quad v_i^{k+1} = (S_i - K)^+ \\
+				&\quad\quad\quad \text{endif} \\
+				&\quad\quad \text{endfor} \\
+				&\quad \text{endif} \\
+				&\text{endfor}
+			\end{aligned}
+			\]
+		\end{tcolorbox}
+		
+		
+		
+		\subsection{美式期權 (American Options)}
+		\subsubsection{機制 (Mechanism)}
+		持有者可以在任一時期執行期權: 
+		
+		$$
+		\left.V\left (S_{t}, t ; K, T\right)=\sup _{t \leq \tau \leq T}\left\{\mathbb{E}_{t}\left[e^{-r (T-t)}\left (K-S_{i}\right)^{r-t}\right)^{\tau}\right]\right\}
+		$$
+		
+		\begin{tcolorbox}[width=\linewidth, colframe=OliveGreen, title=Pseudo-code]
+			\[
+			\begin{aligned}
+				&\text{for } k = 1: M \\
+				&\quad A^{\text{Implicit}}_{k+1} v_{k+1} = v_k \\
+				&\quad \text{for } i = 1: N \\
+				&\quad\quad \text{if } v_i^{k+1} < (S_i - K)^+ \\
+				&\quad\quad\quad v_i^{k+1} = (S_i - K)^+ \\
+				&\quad\quad \text{endif} \\
+				&\quad \text{endfor} \\
+				&\text{endfor}
+			\end{aligned}
+			\]
+		\end{tcolorbox}
+		
+		\begin{itemize}
+			\item 對於每一個 $t$, 存在 $S^{*} (t)$ s.t. 如果 $S (t) \leq S^{*} (t)$, 美式賣出權期權是 $K-S (t)$, 同時對於 $S (t)>S^{*} (t)$ 價值超過了這個即刻執行的價值. 
+			\item $S^{*} (t)$ 被稱作關鍵執行邊界. 
+			\item 區域 $\mathcal{C}=\left\{ (S, t)| S>S^{*} (t)\right\}$ 是一個連續區域. 
+			\item 它的補集 $\mathcal{E}$ 是執行區間. 
+			\item 美式賣出權期權的價值在執行區間是已知的, 且它僅被保留以決定 $\mathcal{C}$ 的值. 
+		\end{itemize}
+		
+		\subsubsection{定價技巧 (Pricing Techniques)}
+		在 PDE 下不同的對美式期權的定價技巧如下: 
+		
+		\begin{itemize}
+			\item 百慕大近似
+			\item 帶有合成股息過程的布萊克-休斯模型偏微分方程
+			\item 布里南-施瓦茨算法
+		\end{itemize}
+		
+		\subsection{百慕大近似 (Bermudan Approximation)}
+		\begin{itemize}
+			\item 在偏微分方程 (PDE) 設定中, 對美式期權定價最基本的方法, 就是直接使用我們為百慕大期權定價所介紹的技術
+			\item 只需使用有限差分法求解下一個時間切片的期權價格, 並應用最適執行準則, 即可確定真實的期權價格
+			\item 如果我們在每個時間步都這樣做, 並將時間步長 $\Delta \tau$ 設定得非常小, 則所得的百慕大期權價格應會在行權時間趨近於連續時收斂至美式期權價格
+		\end{itemize}
+		
+		\subsection{帶有合成股息過程的布萊克-休斯模型偏微分方程 (B-M-S PDE with a Synthetic Dividend Process)}
+		\begin{itemize}
+			\item 對於泛化布萊克-休斯 PDE 微分算子為: 
+		\end{itemize}
+		
+		$$
+		\mathcal{L} (v)=-\frac{\partial \hat{v}}{\partial \tau}+\frac{\sigma (S, \tau)^{2} S^{2}}{2} \frac{\partial^{2} \hat{v}}{\partial S^{2}}+ (r (\tau)-q (\tau)) S\frac{ \partial \hat{v}}{\partial S}-r (\tau) \hat{v} (S, \tau)=0
+		$$
+		
+		\begin{itemize}
+			\item 臨界值 $S^{*} (\tau)$ 構成一條曲線, 將定義域劃分為兩個不同的區域: 
+			\begin{itemize}
+				\item (a) 行權區域 $ (\mathcal{E})$
+				\item (b) 持有區域 (或稱續持區域)$ (\mathcal{C})$
+			\end{itemize}
+			\item 在 $\mathcal{C}$ 中, 期權持有人不執行期權, 且偏微分方程在此區域成立, 即 $\mathcal{L} (v)=0$
+			\item 在 $\mathcal{E}$ 中則不成立, 即 $\mathcal{L} (v) \neq 0$
+			\item 持有人會選擇執行期權並獲得 $K - S$
+			\item 在行權區域 $\mathcal{E}$ 中, 我們有: 
+		\end{itemize}
+		
+		
+		$$
+		V (S, \tau)=K-S  \text { in }  \mathcal{E}
+		$$
+		
+		\begin{itemize}
+			\item 在已知 $\mathcal{E}$ 區域中期權的確切價值與風險指標 (希臘值)時, 我們有
+			
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			& \frac{\partial v}{\partial \tau}=0 \\
+			& \frac{\partial v}{\partial S}=\operatorname{lin}^{2} \text { II } \\
+			& \partial_{\hat{\partial} S^{2}}^{\partial^{2}}=0
+		\end{aligned}
+		$$
+		
+		\begin{itemize}
+			\item 可以將這些值替代進入 $\mathcal{L} (v)$
+		\end{itemize}
+		
+		$$
+		\begin{aligned}
+			\mathcal{L} (k (K))^{\tau+1 r^{n}} & \stackrel{\partial}{=}-\frac{\partial \hat{v}}{\partial \tau}+\frac{\sigma (S, \tau)^{2} S^{2}}{2} \frac{\partial^{2} \hat{v}}{\partial S^{2}}+ (r (\tau)-q (\tau)) S \frac{\partial \hat{v}}{\partial S}-r (\tau) \hat{v} (S, \tau) \\
+			& =0+0+ (r-q) S (-1)-r (K-S) \\
+			& =q S-r S-r K+r S \\
+			& =q S-r K
+		\end{aligned}
+		$$
+		
+		
+		$$
+		\mathcal{L} (v)+\mathbb{1}_{S<S^{\star} (\tau)}\{r K-q S\}=0
+		$$
+		
+		\begin{itemize}
+			\item $S^{*} (\tau)$ 是時間 $\tau$ 時的臨界行權邊界
+		\end{itemize}
+		
+		$$
+		S^{*}\left (\tau_{k}\right)=\min \left\{S_{i}: V_{i}^{k}-\left (K-S_{i}\right)^{+}>0\right\}
+		$$
+		
+		\begin{itemize}
+			\item 假設 $S^{*}\left (\tau_{0}\right)=S^{*} (0)=K$
+			\item 在 $\tau_{1}$ 時, 從初始條件開始
+		\end{itemize}
+		
+		$$
+		\mathbf{V}^{0}=[V^0_i] \quad and \quad S (\tau_{0}=0)=K
+		$$
+		
+		然後解下面的差值等式: 
+		
+		$$  V_{i-1}^{1}+\hat{d}_{i, 1} V_{i}^{1}+\hat{u}_{i, 1} V_{i+1}^{1}=V_{i}^{0}+\mathbb{1}_{S<S\left (\tau_{0}\right)}\left\{r K-q S_{i}\right\}
+		$$
+		
+		解完它之後, 我們可以得到 $S\left (\tau_{1}\right)$ 如下所示: 
+		
+		$$
+		S\left (\tau_{1}\right)=\min \left\{S_{i}: V_{i}^{1}-\left (K-S_{i}\right)^{+}>0\right\}
+		$$
+		
+		\begin{itemize}
+			\item 在 $\tau_{2}$ 時, 我們利用前一步的結果, 即
+		\end{itemize}
+		
+		$$
+		\mathbf{V}^{1}=\left[V_{i}^{1}\right] \quad \text { and } \quad S\left (\tau_{1}\right)
+		$$
+		
+		然來解一下的差值等式: 
+		
+		$$
+		\hat{l}_{i, 2} V_{i-1}^{2}+\hat{d}_{i, 2} V_{i}^{2}+\hat{u}_{i, 2} V_{i+1}^{2} =V_i^1+\mathbb{1}_{\textcolor{black}{S<S\left (\tau_{1}\right)}}\left\{r K-q S_{i}\right\}
+		$$
+		
+		解出後, 我們得到 $S\left (\tau_{2}\right)$ 如下: 
+		
+		$$
+		S\left (\tau_{2}\right)=\min \left\{S_{i}: V_{i}^{2}-\left (K-S_{i}\right)^{+}>0\right\}
+		$$
+		
+		\begin{itemize}
+			\item 重複此程序直到 $\tau_{M}$
+			\item 若存在跳躍, 則需考慮股票價格可能從行權區域跳回續持區域的情況 (稍後討論)
+		\end{itemize}
+		
+		\subsection{布里南-施瓦茨算法 (Brennan-Schwartz Algorithm)}
+		
+		$$
+		A_{k+1}^{\text {Implicit }} V_{k+1}=V_{k}+r . h . s .
+		$$
+		\[
+		\begin{pmatrix}
+			\hat{d}_2^{k+1} & \hat{u}_2^{k+1} & & \\
+			\hat{l}_3^{k+1} & \hat{d}_3^{k+1} & \hat{u}_3^{k+1} & \\
+			& \ddots & \ddots & \ddots \\
+			& & \hat{l}_{N-1}^{k+1} & \hat{d}_{N-1}^{k+1} & \hat{u}_{N-1}^{k+1} \\
+			& & & \hat{l}_N^{k+1} & \hat{d}_N^{k+1}
+		\end{pmatrix}
+		\begin{pmatrix}
+			v_2^{k+1} \\
+			v_3^{k+1} \\
+			\vdots \\
+			v_{N-1}^{k+1} \\
+			v_N^{k+1}
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			v_2^k \\
+			v_3^k \\
+			\vdots \\
+			v_{N-1}^k \\
+			v_N^k
+		\end{pmatrix}
+		+ \text{r.h.s.}
+		\]
+		
+		\begin{itemize}
+			\item 可以通過使得上部對角元素為零, 然後解這個系統; 或者使得下部對角元素為零, 然後解這個系統, 以此來解這個三對角線性等式. 
+			\item 對於一個常規的三對角系統解法, 者沒有區別. 
+			\item 然而在布里南-施瓦茨算法中, 它取決於合同. 
+			
+			\item   對於美式賣賣出權期權, 我們首先將上三角對角線元素歸零; 為此, 我們採用以下步驟: 
+			
+			\begin{itemize}
+				\item (a) 將第 $N^{\text{th}}$ 行 (最後一行)乘以 $-\frac{\hat{U}_{N-1}^{k+1}}{\hat{d}_{N}^{k-1}}$ 並加到第 $ (N-1)^{\text{th}}$ 行, 藉此消去 $\hat{u}_{N-1}^{k+1}$
+				\item (b) 將第 $ (N-1)^{\text{th}}$ 行乘以 $-\frac{\hat{u}_{N-2}^{k t 1}}{\hat{d}_{N-1}^{k t-5}}$ 並加到第 $ (N-2)^{\text{th}}$ 行, 藉此消去 $\hat{u}_{N-2}^{k+1}$
+				\item (c) 重複此操作, 直到所有上對角項皆被消去
+			\end{itemize}
+		\end{itemize}
+		
+		\[
+		\begin{pmatrix}
+			\tilde{d}_2^{k+1} & 0 & & & \\
+			\hat{l}_3^{k+1} & \tilde{d}_3^{k+1} & 0 & & \\
+			& \ddots & \ddots & \ddots & \\
+			& & \hat{l}_{N-1}^{k+1} & \tilde{d}_{N-1}^{k+1} & 0 \\
+			& & & \hat{l}_N^{k+1} & \hat{d}_N^{k+1}
+		\end{pmatrix}
+		\begin{pmatrix}
+			v_2^{k+1} \\
+			v_3^{k+1} \\
+			\vdots \\
+			v_{N-1}^{k+1} \\
+			v_N^{k+1}
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			v_2^k - \frac{\hat{u}_2^{k+1}}{\tilde{d}_3^{k+1}} v_3^k \\
+			v_3^k - \frac{\hat{u}_3^{k+1}}{\tilde{d}_4^{k+1}} v_4^k \\
+			\vdots \\
+			v_{N-1}^k - \frac{\hat{u}_{N-1}^{k+1}}{\tilde{d}_N^{k+1}} v_N^k \\
+			v_N^k
+		\end{pmatrix}
+		\]
+		
+		\[
+		\begin{pmatrix}
+			\hat{d}_2^{k+1} & \hat{u}_2^{k+1} & & \\
+			\hat{l}_3^{k+1} & \hat{d}_3^{k+1} & \hat{u}_3^{k+1} & \\
+			& \ddots & \ddots & \ddots \\
+			& & \hat{l}_{N-1}^{k+1} & \hat{d}_{N-1}^{k+1} & \hat{u}_{N-1}^{k+1} \\
+			& & & \hat{l}_N^{k+1} & \hat{d}_N^{k+1}
+		\end{pmatrix}
+		\begin{pmatrix}
+			v_2^{k+1} \\
+			v_3^{k+1} \\
+			\vdots \\
+			v_{N-1}^{k+1} \\
+			v_N^{k+1}
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			\tilde{v}_2^k \\
+			\tilde{v}_3^k \\
+			\vdots \\
+			\tilde{v}_{N-1}^k \\
+			v_N^k
+		\end{pmatrix}
+		\]
+		
+		其中, $\tilde{v}_{j}^{k}=v_{j}^{k}-\frac{\hat{u}_{j}^{k+1}}{\tilde{d}_{j+1}^{k+1}} v_{j+1}^{k}$, 且 $\tilde{d}_{j}^{k+1}=\hat{d}_{j}^{k+1}-\frac{\hat{i}_{j}^{k+1}}{\hat{d}_{j+1}} i_{j+1}^{k+1}$, 適用於 $j=2, \ldots, N-1$. 現在我們可以從第一行開始求解 $V^{k+1}$. 
+		
+		
+		$$
+		\begin{gathered}
+			\tilde{d}_{2}^{k+1} v_{2}^{k+1}=\tilde{v}_{2}^{k} \\
+			v_{2}^{k+1} =\frac{\tilde{v}_{2}^{k} }{\tilde{d}_{2}^{k+1}}
+		\end{gathered}
+		$$
+		
+		在已知 $v_{2}^{k+1}$ 的情況下, 我們可以利用第二行的方程式求解 $v_{3}^{k+1}$, 即: 
+		
+		$$
+		\begin{array}{r}
+			\hat{I}_{3}^{k+1} v_{2}^{k+1}+\tilde{d}_{3}^{k+1} v_{3}^{k+1}=\tilde{v}_{3}^{k} \\
+			v_{3}^{k+1}=\frac{\tilde{v}_{3}^{k}-\hat{I}_{3}^{k+1} v_{2}^{k+1}}{\tilde{d}_{3}^{k+1}}
+		\end{array}
+		$$
+		
+		接著我們可以重複此過程, 直到求出 $v_{N}^{k+1}$; 假設我們已經求得第 $j^{\text{th}}$ 個元素 $v_{j}^{k+1}$, 有如下算法: 
+		
+		\begin{tcolorbox}[width=\linewidth, colframe=OliveGreen, title=Algorithm]
+			\[
+			\begin{aligned}
+				&\text{if } v_j^{k+1} < (K - S_j)^+ \\
+				&\quad v_j^{k+1} = (K - S_j)^+ \\
+				&\text{else} \\
+				&\quad \text{no action is needed} \\
+				&\text{end}
+			\end{aligned}
+			\]
+		\end{tcolorbox}
+		
+		然後對於每個元素如此重複. 
+		
+		\section*{}
+		\includegraphics[max width=\textwidth, center]{COM}
+		\captionof{figure}{Comparison}
+		
+		\subsection{障礙期權 (Barrier Options)}
+		\begin{itemize}
+			\item 一類在障礙價格被觸及時會生效或失效的期權
+			\item 主要有兩種類型: 
+			\begin{itemize}
+				\item in: 當障礙被觸及時, 期權生效
+				\item out: 當障礙被觸及時, 期權失效
+			\end{itemize}
+			\item in + out = 標準期權 (vanilla)
+		\end{itemize}
+		
+		\subsubsection{敲出期權 (Knock-Out Options)}
+		\begin{itemize}
+			\item 敲出期權 (Knock-Out Options)是一種障礙期權, 在標的資產價格觸及預定障礙價格時, 期權即失效
+			\item 兩種常見類型: 
+			\begin{itemize}
+				\item up-and-out: 若資產價格上升並觸及上障礙, 期權失效
+				\item down-and-out: 若資產價格下跌並觸及下障礙, 期權失效
+			\end{itemize}
+			\item 敲出期權通常保費較低, 因其存在被「敲出」而失效的風險
+		\end{itemize}
+		
+		\textbf{UOC}
+		\begin{align*}
+			&\text{\underline{payoff}} \quad V (S, T) = (S - K)^+ \quad \text{for } S \in (0, H) \\
+			&\text{\underline{boundary conditions}} \quad 
+			\lim_{S \downarrow 0} V (S, t) = 0 \text{ or } \lim_{S \downarrow 0} V_{SS} (S, t) = 0 \\
+			&\quad \lim_{S \uparrow H} V (S, t) = R
+		\end{align*}
+		
+		\textbf{UOP}
+		\begin{align*}
+			&\text{\underline{payoff}} \quad V (S, T) = (K - S)^+ \quad \text{for } S \in (0, H) \\
+			&\text{\underline{boundary conditions}} \quad 
+			\lim_{S \downarrow 0} V_{SS} (S, t) = 0 \text{ or } \lim_{S \downarrow 0} V (S, t) = K - S \\
+			&\quad \lim_{S \uparrow H} V (S, t) = R
+		\end{align*}
+		
+		\textbf{DOC}
+		\begin{align*}
+			&\text{\underline{payoff}} \quad V (S, T) = (S - K)^+ \quad \text{for } S \in (L, \infty) \\
+			&\text{\underline{boundary conditions}} \quad 
+			\lim_{S \downarrow L} V (S, t) = R \\
+			&\quad \lim_{S \uparrow \infty} V_{SS} (S, t) = 0 \text{ or } \lim_{S \uparrow \infty} V (S, t) = S - K
+		\end{align*}
+		
+		\textbf{DOP}
+		\begin{align*}
+			&\text{\underline{payoff}} \quad V (S, T) = (K - S)^+ \quad \text{for } S \in (L, \infty) \\
+			&\text{\underline{boundary conditions}} \quad 
+			\lim_{S \downarrow L} V (S, t) = R \\
+			&\quad \lim_{S \uparrow \infty} V_{SS} (S, t) = 0 \text{ or } \lim_{S \uparrow \infty} V (S, t) = 0
+		\end{align*}
+		
+		
+		\subsubsection{敲入期權 (Knock-In Options)}
+		\begin{itemize}
+			\item UIC = vanilla call - UOC
+			\item UIP = vanilla put - UOP
+			\item DIC = vanilla call - DOC
+			\item DIP $=$ vanilla put - DOP
+		\end{itemize}
+		
+		
+		\textbf{雙倍障礙期權}
+		\begin{align*}
+			&\text{payoff} \quad V (S, T) = (S - K)^+ \quad \text{for } S \in (L, H) \\
+			&\text{boundary conditions} \quad 
+			\lim_{S \downarrow L} V (S, t) = R_1, \quad \lim_{S \uparrow H} V (S, t) = R_2
+		\end{align*}
+		
+		\section{向前偏微分方程 (Forward PDE)}
+		\subsection{向前和向後偏微分方程 (Forward vs. Backward PDEs)}
+		\begin{itemize}
+			\item 我們可以將期權價格 $V (S, t, K, T)$ 視為一個四維問題.
+			\item 向後定價表示為 $V (S, t; K, T)$:
+		\end{itemize}
+		
+		$$
+		\frac{\partial V}{\partial t}+\frac{1}{2} \sigma^{2} (S, t) S^{2} \frac{\partial^{2} V}{\partial S^{2}} + (r (t)-q (t)) S \frac{\partial V}{\partial S}=r (t) V (S, t)
+		$$
+		
+		\begin{itemize}
+			\item 向前 $V (K, T , S, t)$:
+		\end{itemize}
+		
+		$$
+		{-\frac{\partial K}{\partial T}+\frac{1}{2} \sigma^{2} (K, T) K^{2} \frac{\partial^{2} C}{\partial K^{2}}-[r (T)-q (T)] K \frac{\partial C}{\partial K}=q (T) C}
+		$$
+		
+		\subsection{局部波動率曲面 (Local Volatility Surface)}
+		在已知市場價格 $C (K, T)$ 的情況下, 可以透過求解 $\sigma (K, T)$, 直接從市場報價中計算出局部波動率曲面
+		
+		
+		$$
+		\sigma (K, T)=\left (\frac{\frac{\partial C}{\partial T}+[r (T)-q (T)] K \frac{\partial C}{\partial K}+q (T) C}{K^{2} \frac{\partial^{2} C}{\partial K^{2}}}\right)^{1 / 2}
+		$$
+		
+		\subsection{下敲出期權的向前偏微分方程 (Forward PDE for DOC, Carr \& Hirsa)}
+		
+		$$
+		\frac{\sigma^{2} (K, T)}{2} K^{2} \frac{\partial^{2} D_{o}^{c}}{\partial K^{2}}-[r (T)-q (T)] K \frac{\partial D_{o}^{c}}{\partial K}-q (K) \hat{D}_{o}^{c}=\frac{\partial D_{o}^{c}}{\partial T}
+		$$
+		
+		
+		這裡的 $c$ 和 $o$ 意思是什麼?
+		
+		
+		它有初始條件: 
+		
+		$$
+		D_{o}^{c} (K, 0)=\left (S_{0}-K\right)^{+} \text {, 對於 } {K} \in[H, \infty) \text {, 且 } H<S_{0}
+		$$
+		
+		和邊界條件: 
+		
+		$$
+		\begin{aligned}
+			& \lim _{K \downarrow H} \frac{\partial^{2} D_{o}^{c}}{\partial K^{2}} (K, T)=0, \quad T \in[0, \bar{T}] \\
+			& \lim _{K \uparrow \infty} \frac{\partial^{2} D_{o}^{c}}{\partial K^{2}} (K, T)=0, \quad T \in[0, \bar{T}]
+		\end{aligned}
+		$$
+		
+		
+		$$
+		\frac{\sigma^{2} (K, T)}{2} K^{2} \frac{\partial^{2} U_{o}^{c}}{\partial K^{2}}-[r (T)-q (T)] K \frac{\partial U_{o}^{c}}{\partial K}-q (T) U_{o}^{c}=  \frac{\partial U_{o}^{c}}{\partial T}+\left[\frac{\sigma^{2} (H, T)}{2} H^{2} \frac{\partial^{3} U_{o}^{c}}{\partial K^{3}} (H, T)\right] (K-H)
+		$$
+		
+		
+		有初始條件: 
+		
+		$$
+		U_{o}^{c} (K, 0)=\left (S_{0}-K_{0}\right)^{+H}, \text { for } K \in[0, H), \text { and } S_{0}<H
+		$$
+		
+		和邊界條件: 
+		
+		$$
+		\begin{aligned}
+			& \lim _{K \downarrow 0} \frac{\partial^{2} U_{o}^{c}}{\partial K^{2}} (K, T)=0, \quad T \in[0, \bar{T}] \\
+			& \lim _{K \uparrow H} \frac{\partial^{2} U_{o}^{c}}{\partial K^{2}} (K, T)=0, \quad T \in[0, \bar{T}]
+		\end{aligned}
+		$$
+		
+		\includegraphics[max width=0.6\textwidth, center]{UOC}
+		\captionof{figure}{{Backward UOC for various $K$ \& $T$}}
+		
+		\includegraphics[max width=0.6\textwidth, center]{FRDUOC}
+		\captionof{figure}{{Forward UOC}}
+		
+		\section{高維偏微分方程 (Higher Dimension PDE)}
+		\subsection{在高維的有限差分 (Finite Differences in Higher Dimensions)}
+		\begin{itemize}
+			\item 隨機波動率 $v (S, v, t)$, 例如 Heston 模型中的股票價格過程.
+			\item 隨機利率 $v (S, r, t)$, 例如可轉換公司債中的定價情境.
+			\item 算術平均 $v (S, A, t)$, 例如亞洲期權 (Asian options).
+		\end{itemize}
+		
+		\subsection{赫森隨機波動率模型 (Heston Stochastic Volatility Model)}
+		$$
+		\begin{aligned}
+			d S (t) & =\mu S d t+\sqrt{v (t)} S d z_{1} (t) \\
+			d \sqrt{v (t)} & =-\beta \sqrt{v (t)} d t \cdot q^{3} \delta d z_{2} (t)
+		\end{aligned}
+		$$
+		
+		對應的偏微分方程為: 
+		
+		$$
+		\begin{aligned}
+			& \frac{1}{2} vS^{2} \frac{\partial^{2} U}{\partial S^{2}}+\rho \sigma v S \frac{\partial^{2} U}{\partial S \partial v}+\frac{1}{2} \sigma^{2} v \frac{\partial^{2} U}{\partial v^{2}}+ (r-q) S \frac{\partial U}{\partial S}+\kappa (\theta-v) \frac{\partial U}{\partial v}-r U-\frac{\partial U}{\partial \tau}=0
+		\end{aligned}
+		$$
+		
+		初始和邊界條件為: 
+		
+		\begin{align*}
+			U (S, v, 0) &= (S - K)^+ \\
+			\lim_{S \downarrow 0} \frac{\partial^2 U}{\partial S^2} (S, v, \tau) &= 0 \\
+			\lim_{S \uparrow \infty} \frac{\partial^2 U}{\partial S^2} (S, v, \tau) &= 0 \\
+			(r - q) S \frac{\partial U}{\partial S} (S, 0, \tau) + \kappa \theta \frac{\partial U}{\partial v} (S, 0, \tau) - r U (S, 0, \tau) - \frac{\partial U}{\partial \tau} (S, 0, \tau) &= 0 \\
+			\lim_{v \uparrow \infty} U (S, v, \tau) &= S
+		\end{align*}
+		
+		\subsection{坐標變換後的網格點 (Grid Points after Coordinate Transformation)}
+		
+		
+		$$
+		\bar{D}=\left\{\begin{array}{ccc}
+			\xi_{i}=0+ (i-1) \Delta \xi ; & \Delta \xi_{2} \frac{T}{N} ; & i=1, \ldots, N+1 \\
+			\eta_{j}=0+ (j-1) \Delta \eta_{i} & \Delta \eta=\frac{1}{M} ; & j=1, \ldots, M+1 \\
+			\tau_{k}=0+5 (k-1) \Delta \tau ; & \Delta \tau=\frac{T-0}{L} ; & k=1, \ldots, L+1
+		\end{array}\right\}
+		$$
+		
+		它的差值等式為: 
+		
+		\[
+		\begin{aligned}
+			&- a_{i, j} U_{i-1, j}^{k+1}
+			- b_{i, j} U_{i, j-1}^{k+1}
+			+ a_{i, j} U_{i+1, j-1}^{k+1}
+			- c_{i, j} U_{i-1, j}^{k+1}
+			+ d_{i, j} U_{i, j}^{k+1} - e_{i, j} U_{i+1, j}^{k+1}
+			+ a_{i, j} U_{i-1, j+1}^{k+1}
+			- f_{i, j} U_{i, j+1}^{k+1}
+			- a_{i, j} U_{i+1, j+1}^{k+1}
+			= U_{i, j}^k
+		\end{aligned}
+		\]
+		
+		
+		$$
+		A U^{k+1}=U^{k}+\text { r.h.s. }
+		$$
+		
+		其中, $A$ 是一個 $ (M-1) (N-1) \times (M-1) (N-1)$ 的區塊三對角矩陣 (block tridiagonal matrix), 而解向量的形式如下: 
+		
+		
+		\[
+		\mathbf{U}^{k+1} =
+		\begin{pmatrix}
+			U^{k+1}_{2, 2} \\
+			U^{k+1}_{3, 2} \\
+			\vdots \\
+			U^{k+1}_{N, 2} \\
+			U^{k+1}_{2, 3} \\
+			U^{k+1}_{3, 3} \\
+			\vdots \\
+			U^{k+1}_{N, 3} \\
+			\vdots \\
+			U^{k+1}_{2, M} \\
+			U^{k+1}_{3, M} \\
+			\vdots \\
+			U^{k+1}_{N, M}
+		\end{pmatrix}
+		\]
+		
+		\includegraphics[max width=0.5\textwidth, center]{2025_03_21_36732edeafe652a77a20g-65}
+		\captionof{figure}{Structure of the Matrix}
+		
+		\subsection{交替方向隱式法 (Alternative Direction Implicit, ADI Scheme)}
+		\begin{itemize}
+			\item 每一完整的時間步驟包含兩個半步: 
+			\\ (a) 首先在 $\xi$ 方向採用隱式差分, 在 $\eta$ 方向採用顯式差分
+			\\ (b) 然後在 $\xi$ 方向採用顯式差分, 在 $\eta$ 方向採用隱式差分
+		\end{itemize}
+		
+		\[
+		\begin{array}{ccc}
+			U^k_{i-1, j+1} & U^k_{i, j+1} & U^k_{i+1, j+1} \\
+			U^{k+\frac{1}{2}}_{i-1, j} & U^{k+\frac{1}{2}}_{i, j} & U^{k+\frac{1}{2}}_{i+1, j} \\
+			U^k_{i-1, j-1} & U^k_{i, j-1} & U^k_{i+1, j-1}
+		\end{array}
+		\]
+		
+		\begin{itemize}
+			\item 網格的編號方式為從左到右, 從下到上。
+			\item 將矩陣 $A$ 表示為: 
+		\end{itemize}
+		
+		$$
+		A=A_{1}+A_{2}
+		$$
+		
+		\begin{itemize}
+			\item 解如下的線性系統: 
+		\end{itemize}
+		
+		$$
+		A_{1} \mathbf{U}^{\mathbf{k}+\frac{1}{2}}=A_{2} \mathbf{U}^{\mathbf{k}}+\text { r.h.s. }
+		$$
+		
+		\begin{itemize}
+			\item 解 $\mathbf{U}^{\mathbf{k}+\frac{1}{2}}$
+		\end{itemize}
+		
+		$$
+		\mathbf{U}^{k+\frac{1}{2}}=\left (\begin{array}{c}
+			U_{2, 2}^{k+\frac{1}{2}} \\
+			U_{3, 2}^{k+\frac{1}{2}} \\
+			\vdots \\
+			U_{N, 2}^{k+\frac{1}{2}} \\
+			U_{2, 3}^{k+\frac{1}{2}} \\
+			U_{3, 3}^{k+\frac{1}{2}} \\
+			\vdots \\
+			U_{N, 3}^{k+\frac{1}{2}} \\
+			\vdots \\
+			U_{2, 2}^{k+\frac{1}{2}} \\
+			U_{3, M}^{k+\frac{1}{2}} \\
+			\vdots \\
+			U_{N, M}^{k+\frac{1}{2}}
+		\end{array}\right)
+		$$
+		
+		
+		\[
+		\begin{array}{ccc}
+			U^{k+\frac{1}{2}}_{i-1, j+1} & U^{k+1}_{i, j+1} & U^{k+\frac{1}{2}}_{i+1, j+1} \\
+			U^{k+\frac{1}{2}}_{i-1, j}   & U^{k+1}_{i, j}   & U^{k+\frac{1}{2}}_{i+1, j} \\
+			U^{k+\frac{1}{2}}_{i-1, j-1} & U^{k+1}_{i, j-1} & U^{k+\frac{1}{2}}_{i+1, j-1}
+		\end{array}
+		\]
+		
+		
+		\begin{itemize}
+			\item 網格的編號方式為從下到上, 從左到右.
+			\item 將 $\widetilde{A}$ 表示為: 
+		\end{itemize}
+		
+		
+		$$
+		\widetilde{A}=\widetilde{A}_{1}+\tilde{A}_{2}
+		$$
+		
+		\begin{itemize}
+			\item 解如下的線性系統: 
+			\[
+			\tilde{A}_1 \tilde{\mathbf{U}}^{k+1} = \tilde{A}_2 \tilde{\mathbf{U}}^{k+\frac{1}{2}}
+			\]
+			
+			其中 \(\tilde{\mathbf{U}}^{k+\frac{1}{2}} \) 是通過重新排序 \(\mathbf{U}^{k+\frac{1}{2}} \) 所得
+			\item 求解 $\widetilde{\mathbf{U}}^{\mathbf{k}+\mathbf{1}}$ 並重新排序
+			
+		\end{itemize}
+		
+		$$
+		\widetilde{\mathbf{U}}^{k+1}=\left (\begin{array}{c}
+			U_{2, 2}^{k+1} \\
+			U_{2, 3}^{k+1} \\
+			\vdots \\
+			U_{2, M}^{k+1} \\
+			U_{3, 2}^{k+1} \\
+			U_{3, 3}^{k+1} \\
+			\vdots \\
+			U_{3, M}^{k+1} \\
+			\vdots \\
+			U_{N, 2}^{k+1} \\
+			U_{N, 3}^{k+1} \\
+			\vdots \\
+			U_{N, M}^{k+1}
+		\end{array}\right)
+		$$
+		
+		
+		
+	\end{document}
